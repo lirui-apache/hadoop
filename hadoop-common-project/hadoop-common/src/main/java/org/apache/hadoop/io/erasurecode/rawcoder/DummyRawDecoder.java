@@ -22,7 +22,8 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import java.nio.ByteBuffer;
 
 /**
- * A dummy raw decoder that doesn't really decode the data
+ * A dummy raw decoder that does no real computation.
+ * Instead, it just returns zero bytes.
  */
 @InterfaceAudience.Private
 public class DummyRawDecoder extends AbstractRawErasureDecoder {
