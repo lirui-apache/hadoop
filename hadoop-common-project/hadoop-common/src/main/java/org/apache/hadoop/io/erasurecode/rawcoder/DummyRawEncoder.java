@@ -22,7 +22,7 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import java.nio.ByteBuffer;
 
 /**
- * A dummy encoder that does no real computation.
+ * A dummy raw encoder that does no real computation.
  * Instead, it just returns zero bytes.
  */
 @InterfaceAudience.Private
