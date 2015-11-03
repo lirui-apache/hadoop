@@ -20,7 +20,7 @@ package org.apache.hadoop.io.erasurecode.rawcoder;
 import org.apache.hadoop.classification.InterfaceAudience;
 
 /**
- * A raw erasure coder factory for dummy raw coders
+ * A raw erasure coder factory for dummy raw coders.
  */
 @InterfaceAudience.Private
 public class DummyRawErasureCoderFactory implements RawErasureCoderFactory {
