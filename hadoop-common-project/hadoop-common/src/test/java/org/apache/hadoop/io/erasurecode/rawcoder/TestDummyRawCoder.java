@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 
 /**
- * Test dummy raw coder
+ * Test dummy raw coder.
  */
 public class TestDummyRawCoder extends TestRawCoderBase {
   @Before
