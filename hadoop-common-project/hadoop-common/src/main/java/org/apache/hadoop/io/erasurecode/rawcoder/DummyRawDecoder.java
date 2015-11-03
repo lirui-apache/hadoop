@@ -33,16 +33,12 @@ public class DummyRawDecoder extends AbstractRawErasureDecoder {
   @Override
   protected void doDecode(ByteBuffer[] inputs, int[] erasedIndexes,
       ByteBuffer[] outputs) {
-    for (ByteBuffer output : outputs) {
-      resetBuffer(output, output.remaining());
-    }
+    // Nothing to do. Output buffers have already been reset
   }
 
   @Override
   protected void doDecode(byte[][] inputs, int[] inputOffsets, int dataLen,
       int[] erasedIndexes, byte[][] outputs, int[] outputOffsets) {
-    for (int i = 0; i < outputs.length; i++) {
-      resetBuffer(outputs[i], outputOffsets[i], dataLen);
-    }
+    // Nothing to do. Output buffers have already been reset
   }
 }

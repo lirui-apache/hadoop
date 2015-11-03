@@ -32,16 +32,12 @@ public class DummyRawEncoder extends AbstractRawErasureEncoder {
 
   @Override
   protected void doEncode(ByteBuffer[] inputs, ByteBuffer[] outputs) {
-    for (ByteBuffer output : outputs) {
-      resetBuffer(output, output.remaining());
-    }
+    // Nothing to do. Output buffers have already been reset
   }
 
   @Override
   protected void doEncode(byte[][] inputs, int[] inputOffsets, int dataLen,
       byte[][] outputs, int[] outputOffsets) {
-    for (int i = 0; i < outputs.length; i++) {
-      resetBuffer(outputs[i], outputOffsets[i], dataLen);
-    }
+    // Nothing to do. Output buffers have already been reset
   }
 }
