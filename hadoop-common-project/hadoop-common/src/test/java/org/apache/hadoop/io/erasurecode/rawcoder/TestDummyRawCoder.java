@@ -31,10 +31,8 @@ public class TestDummyRawCoder extends TestRawCoderBase {
   public void setup() {
     encoderClass = DummyRawEncoder.class;
     decoderClass = DummyRawDecoder.class;
-    prepareCoders();
     setAllowDump(false);
     setChunkSize(baseChunkSize);
-    setAllowChangeInputs(false);
   }
 
   @Test
@@ -52,8 +50,10 @@ public class TestDummyRawCoder extends TestRawCoderBase {
   @Override
   protected void testCoding(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
+    prepareCoders();
 
     prepareBufferAllocator(true);
+    setAllowChangeInputs(false);
 
     // Generate data and encode
     ECChunk[] dataChunks = prepareDataChunksForEncoding();
