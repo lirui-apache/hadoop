@@ -24,6 +24,8 @@ import java.nio.ByteBuffer;
 /**
  * A dummy raw encoder that does no real computation.
  * Instead, it just returns zero bytes.
+ * This encoder can be used to isolate the performance issue to HDFS side logic
+ * instead of codec, and is intended for test only.
  */
 @InterfaceAudience.Private
 public class DummyRawEncoder extends AbstractRawErasureEncoder {
