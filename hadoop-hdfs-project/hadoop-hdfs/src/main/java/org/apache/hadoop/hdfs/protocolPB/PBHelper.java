@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.google.flatbuffers.FlatBufferBuilder;
 import org.apache.hadoop.fs.CacheFlag;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.CreateFlag;
@@ -187,7 +188,10 @@ import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifie
 import org.apache.hadoop.hdfs.server.common.HdfsServerConstants.NamenodeRole;
 import org.apache.hadoop.hdfs.server.common.HdfsServerConstants.NodeType;
 import org.apache.hadoop.hdfs.server.common.HdfsServerConstants.ReplicaState;
+import org.apache.hadoop.hdfs.server.common.Storage;
 import org.apache.hadoop.hdfs.server.common.StorageInfo;
+import org.apache.hadoop.hdfs.server.flatbuffer.IntelBlockProto;
+import org.apache.hadoop.hdfs.server.flatbuffer.IntelStorageTypeProto;
 import org.apache.hadoop.hdfs.server.namenode.CheckpointSignature;
 import org.apache.hadoop.hdfs.server.protocol.BalancerBandwidthCommand;
 import org.apache.hadoop.hdfs.server.protocol.BlockCommand;
@@ -416,7 +420,12 @@ public class PBHelper {
     }
     return result;
   }
-  
+
+  public static int convertIntel(Block b, FlatBufferBuilder fbb) {
+    return IntelBlockProto.createIntelBlockProto(fbb,
+        b.getBlockId(), b.getGenerationStamp(), b.getNumBytes());
+  }
+
   // Block
   public static BlockProto convert(Block b) {
     return BlockProto.newBuilder().setBlockId(b.getBlockId())
@@ -427,6 +436,11 @@ public class PBHelper {
   public static Block convert(BlockProto b) {
     return new Block(b.getBlockId(), b.getNumBytes(), b.getGenStamp());
   }
+
+  public static Block convert(IntelBlockProto b) {
+    return new Block(b.blockId(), b.numBytes(), b.genStamp());
+  }
+
 
   public static BlockWithLocationsProto convert(BlockWithLocations blk) {
     return BlockWithLocationsProto.newBuilder()
@@ -1839,6 +1853,54 @@ public class PBHelper {
     return protos; 
   }
 
+  public static StorageType convertIntelStorageType(int type) {
+    switch(type) {
+      case IntelStorageTypeProto.DISK:
+        return StorageType.DISK;
+      case IntelStorageTypeProto.SSD:
+        return StorageType.SSD;
+      case IntelStorageTypeProto.ARCHIVE:
+        return StorageType.ARCHIVE;
+      case IntelStorageTypeProto.RAM_DISK:
+        return StorageType.RAM_DISK;
+      default:
+        throw new IllegalStateException(
+            "BUG: IntelStorageTypeProto not found, type=" + type);
+    }
+  }
+
+  public static StorageType convertStorageType(StorageTypeProto type) {
+    switch(type) {
+      case DISK:
+        return StorageType.DISK;
+      case SSD:
+        return StorageType.SSD;
+      case ARCHIVE:
+        return StorageType.ARCHIVE;
+      case RAM_DISK:
+        return StorageType.RAM_DISK;
+      default:
+        throw new IllegalStateException(
+            "BUG: StorageTypeProto not found, type=" + type);
+    }
+  }
+
+  public static int convertIntelStorageType(StorageType type) {
+    switch (type) {
+      case DISK:
+        return IntelStorageTypeProto.DISK;
+      case SSD:
+        return IntelStorageTypeProto.SSD;
+      case ARCHIVE:
+        return IntelStorageTypeProto.ARCHIVE;
+      case RAM_DISK:
+        return IntelStorageTypeProto.RAM_DISK;
+      default:
+        throw new IllegalStateException(
+            "BUG: StorageType not found, type=" + type
+        );
+    }
+  }
   public static StorageTypeProto convertStorageType(StorageType type) {
     switch(type) {
     case DISK:
@@ -1871,21 +1933,7 @@ public class PBHelper {
     }
   }
 
-  public static StorageType convertStorageType(StorageTypeProto type) {
-    switch(type) {
-      case DISK:
-        return StorageType.DISK;
-      case SSD:
-        return StorageType.SSD;
-      case ARCHIVE:
-        return StorageType.ARCHIVE;
-      case RAM_DISK:
-        return StorageType.RAM_DISK;
-      default:
-        throw new IllegalStateException(
-            "BUG: StorageTypeProto not found, type=" + type);
-    }
-  }
+
 
   public static StorageType[] convertStorageTypes(
       List<StorageTypeProto> storageTypesList, int expectedSize) {

@@ -18,14 +18,7 @@
 
 package org.apache.hadoop.hdfs.server.namenode;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.DigestOutputStream;
@@ -37,6 +30,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.flatbuffers.FlatBufferBuilder;
+import com.google.flatbuffers.Table;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
@@ -46,6 +42,7 @@ import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos.CacheP
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenSecretManager;
 import org.apache.hadoop.hdfs.server.blockmanagement.BlockIdManager;
 import org.apache.hadoop.hdfs.server.common.HdfsServerConstants;
+import org.apache.hadoop.hdfs.server.flatbuffer.*;
 import org.apache.hadoop.hdfs.server.namenode.FsImageProto.CacheManagerSection;
 import org.apache.hadoop.hdfs.server.namenode.FsImageProto.FileSummary;
 import org.apache.hadoop.hdfs.server.namenode.FsImageProto.NameSystemSection;
@@ -68,6 +65,8 @@ import org.apache.hadoop.util.Time;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.protobuf.CodedOutputStream;
+
+import javax.xml.crypto.Data;
 
 /**
  * Utility class to read / write fsimage in protobuf format.
@@ -177,42 +176,63 @@ public final class FSImageFormatProtobuf {
       RandomAccessFile raFile = new RandomAccessFile(file, "r");
       AltFileInputStream fin = new AltFileInputStream(file);
       try {
-        loadInternal(raFile, fin);
+        loadIntelInternal(raFile, fin);
         long end = Time.monotonicNow();
         LOG.info("Loaded FSImage in " + (end - start) / 1000 + " seconds.");
+        /**
+         * Number Of Blocks : 1043093
+         * Block Size : 5MB
+         * Load Time :
+         *
+         *          4482 Milliseconds
+         *          4180 Milliseconds
+         *          4599 Milliseconds
+         *          4472 Milliseconds
+         *          4223 Milliseconds
+         *
+         *  Average Load FSImage Time : 4391 Milliseconds
+         */
+        long time = end - start;
+        File file1 = new File("/home/minglei/intervalTime.txt");
+        FileOutputStream out = new FileOutputStream(file1);
+        OutputStreamWriter osw  = new OutputStreamWriter(out);
+        BufferedWriter bw = new BufferedWriter(osw);
+        bw.write(String.valueOf(time) + " Milliseconds ");
+        bw.flush();
+
       } finally {
         fin.close();
         raFile.close();
       }
     }
 
-    private void loadInternal(RandomAccessFile raFile, AltFileInputStream fin)
-        throws IOException {
+    private void loadIntelInternal(RandomAccessFile raFile, AltFileInputStream fin)
+      throws IOException{
       if (!FSImageUtil.checkFileFormat(raFile)) {
-        throw new IOException("Unrecognized file format");
+        throw new IOException("Unrecongnized file format");
       }
-      FileSummary summary = FSImageUtil.loadSummary(raFile);
-      if (requireSameLayoutVersion && summary.getLayoutVersion() !=
-          HdfsServerConstants.NAMENODE_LAYOUT_VERSION) {
-        throw new IOException("Image version " + summary.getLayoutVersion() +
-            " is not equal to the software version " +
+      IntelFileSummary summary = FSImageUtil.loadIntelSummary(raFile);
+      if (requireSameLayoutVersion &&
+          summary.layoutVersion() != HdfsServerConstants.NAMENODE_LAYOUT_VERSION) {
+        throw new IOException("Image version " + summary.layoutVersion() +
+            "is not equal to the software version " +
             HdfsServerConstants.NAMENODE_LAYOUT_VERSION);
       }
-
       FileChannel channel = fin.getChannel();
-
       FSImageFormatPBINode.Loader inodeLoader = new FSImageFormatPBINode.Loader(
           fsn, this);
       FSImageFormatPBSnapshot.Loader snapshotLoader = new FSImageFormatPBSnapshot.Loader(
           fsn, this);
 
-      ArrayList<FileSummary.Section> sections = Lists.newArrayList(summary
-          .getSectionsList());
-      Collections.sort(sections, new Comparator<FileSummary.Section>() {
+      ArrayList<IntelSection> sections = new ArrayList<IntelSection>();
+      for (int i = 0; i < summary.sectionsLength();i++) {
+        sections.add(summary.sections(i));
+      }
+      Collections.sort(sections, new Comparator<IntelSection>() {
         @Override
-        public int compare(FileSummary.Section s1, FileSummary.Section s2) {
-          SectionName n1 = SectionName.fromString(s1.getName());
-          SectionName n2 = SectionName.fromString(s2.getName());
+        public int compare(IntelSection s1, IntelSection s2) {
+          SectionName n1 = SectionName.fromString(s1.name());
+          SectionName n2 = SectionName.fromString(s2.name());
           if (n1 == null) {
             return n2 == null ? 0 : -1;
           } else if (n2 == null) {
@@ -222,72 +242,92 @@ public final class FSImageFormatProtobuf {
           }
         }
       });
-
       StartupProgress prog = NameNode.getStartupProgress();
-      /**
-       * beginStep() and the endStep() calls do not match the boundary of the
-       * sections. This is because that the current implementation only allows
-       * a particular step to be started for once.
-       */
       Step currentStep = null;
-
-      for (FileSummary.Section s : sections) {
-        channel.position(s.getOffset());
+      for (IntelSection s:sections) {
+        channel.position(s.offset());
         InputStream in = new BufferedInputStream(new LimitInputStream(fin,
-            s.getLength()));
-
+            s.length()));
         in = FSImageUtil.wrapInputStreamForCompression(conf,
-            summary.getCodec(), in);
+            summary.codec(), in);
 
-        String n = s.getName();
+        String n = s.name();
 
         switch (SectionName.fromString(n)) {
-        case NS_INFO:
-          loadNameSystemSection(in);
+          case NS_INFO:
+            loadIntelNameSystemSection(in);   // success
+            break;
+          case STRING_TABLE:
+            loadIntelStringTableSection(in); // success
+            break;
+          case INODE: {
+            currentStep = new Step(StepType.INODES);
+            prog.beginStep(Phase.LOADING_FSIMAGE, currentStep);
+              inodeLoader.loadIntelINodeSection(in, prog, currentStep); // success
+          }
           break;
-        case STRING_TABLE:
-          loadStringTableSection(in);
+          case INODE_REFERENCE:
+            snapshotLoader.loadIntelINodeReferenceSection(in); // success
+            break;
+          case INODE_DIR:
+            inodeLoader.loadIntelINodeDirectorySection(in); // success
+            break;
+          case FILES_UNDERCONSTRUCTION:
+            inodeLoader.loadIntelFilesUnderConstructionSection(in); // success
+            break;
+          case SNAPSHOT:
+            snapshotLoader.loadIntelSnapshotSection(in); // success
+            break;
+          case SNAPSHOT_DIFF:
+            snapshotLoader.loadIntelSnapshotDiffSection(in); // succcess
+            break;
+          case SECRET_MANAGER: {
+            prog.endStep(Phase.LOADING_FSIMAGE, currentStep);
+            Step step = new Step(StepType.DELEGATION_TOKENS);
+            prog.beginStep(Phase.LOADING_FSIMAGE, step);
+            loadIntelSecretManagerSection(in, prog, step);  // success
+            prog.endStep(Phase.LOADING_FSIMAGE, step);
+          }
           break;
-        case INODE: {
-          currentStep = new Step(StepType.INODES);
-          prog.beginStep(Phase.LOADING_FSIMAGE, currentStep);
-          inodeLoader.loadINodeSection(in, prog, currentStep);
+          case CACHE_MANAGER: {
+            Step step = new Step(StepType.CACHE_POOLS);
+            prog.beginStep(Phase.LOADING_FSIMAGE, step);
+            loadIntelCacheManagerSection(in, prog, step); // success
+            prog.endStep(Phase.LOADING_FSIMAGE, step);
+          }
+          break;
+          default:
+            LOG.warn("Unrecognized section " + n);
+            break;
         }
-          break;
-        case INODE_REFERENCE:
-          snapshotLoader.loadINodeReferenceSection(in);
-          break;
-        case INODE_DIR:
-          inodeLoader.loadINodeDirectorySection(in);
-          break;
-        case FILES_UNDERCONSTRUCTION:
-          inodeLoader.loadFilesUnderConstructionSection(in);
-          break;
-        case SNAPSHOT:
-          snapshotLoader.loadSnapshotSection(in);
-          break;
-        case SNAPSHOT_DIFF:
-          snapshotLoader.loadSnapshotDiffSection(in);
-          break;
-        case SECRET_MANAGER: {
-          prog.endStep(Phase.LOADING_FSIMAGE, currentStep);
-          Step step = new Step(StepType.DELEGATION_TOKENS);
-          prog.beginStep(Phase.LOADING_FSIMAGE, step);
-          loadSecretManagerSection(in, prog, step);
-          prog.endStep(Phase.LOADING_FSIMAGE, step);
-        }
-          break;
-        case CACHE_MANAGER: {
-          Step step = new Step(StepType.CACHE_POOLS);
-          prog.beginStep(Phase.LOADING_FSIMAGE, step);
-          loadCacheManagerSection(in, prog, step);
-          prog.endStep(Phase.LOADING_FSIMAGE, step);
-        }
-          break;
-        default:
-          LOG.warn("Unrecognized section " + n);
-          break;
-        }
+      }
+    }
+
+    public static byte[] parseFrom(InputStream in) throws IOException {
+      DataInputStream inputStream = new DataInputStream(in);
+      int len = inputStream.readInt();
+      byte[] data = new byte[len];
+      inputStream.read(data);
+      return data;
+    }
+
+    private void loadIntelNameSystemSection(InputStream in) throws IOException {
+      ByteBuffer byteBuffer = ByteBuffer.wrap(parseFrom(in));
+      IntelNameSystemSection intelNameSystemSection =
+          IntelNameSystemSection.getRootAsIntelNameSystemSection(byteBuffer);
+      BlockIdManager blockIdManager = fsn.getBlockIdManager();
+      blockIdManager.setGenerationStampV1(intelNameSystemSection.genstampV1());
+      blockIdManager.setGenerationStampV2(intelNameSystemSection.genstampV2());
+      blockIdManager.setGenerationStampV1Limit(intelNameSystemSection.genstampV1Limit());
+      blockIdManager.setLastAllocatedBlockId(intelNameSystemSection.lastAllocatedBlockId());
+      imgTxId = intelNameSystemSection.transactionId();
+//      long roll = intelNameSystemSection.rollingUpgradeStartTime();
+//      boolean hasRoll = roll != 0;
+      if (intelNameSystemSection.rollingUpgradeStartTime() != 0
+          && fsn.getFSImage().hasRollbackFSImage()) {
+        // we set the rollingUpgradeInfo only when we make sure we have the
+        // rollback image
+        fsn.setRollingUpgradeInfo(true, intelNameSystemSection.rollingUpgradeStartTime());
       }
     }
 
@@ -307,6 +347,19 @@ public final class FSImageFormatProtobuf {
       }
     }
 
+    private void loadIntelStringTableSection(InputStream in) throws IOException {
+      ByteBuffer byteBuffer = ByteBuffer.wrap(parseFrom(in));
+      IntelStringTableSection intelSts =
+          IntelStringTableSection.getRootAsIntelStringTableSection(byteBuffer);
+      ctx.stringTable = new String[(int)intelSts.numEntry() + 1];
+      for (int i = 0; i < intelSts.numEntry(); ++i) {
+        byte[] bytes1 = parseFrom(in);
+        ByteBuffer byteBuffer1 = ByteBuffer.wrap(bytes1);
+        IntelEntry intelEntry = IntelEntry.getRootAsIntelEntry(byteBuffer1);
+        ctx.stringTable[(int)intelEntry.id()] = intelEntry.str();
+      }
+    }
+
     private void loadStringTableSection(InputStream in) throws IOException {
       StringTableSection s = StringTableSection.parseDelimitedFrom(in);
       ctx.stringTable = new String[s.getNumEntry() + 1];
@@ -315,6 +368,39 @@ public final class FSImageFormatProtobuf {
             .parseDelimitedFrom(in);
         ctx.stringTable[e.getId()] = e.getStr();
       }
+    }
+
+    private void loadIntelSecretManagerSection(InputStream in, StartupProgress prog,
+                                          Step currentStep) throws IOException {
+      byte[] bytes = parseFrom(in);
+      ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+      IntelSecretManagerSection is = IntelSecretManagerSection.
+          getRootAsIntelSecretManagerSection(byteBuffer);
+
+      long numKeys = is.numKeys(), numTokens = is.numTokens();
+      ArrayList<IntelDelegationKey> intelkeys = Lists
+          .newArrayListWithCapacity((int)numKeys);
+      ArrayList<IntelPersistToken> inteltokens = Lists
+          .newArrayListWithCapacity((int)numTokens);
+
+      for (int i = 0; i < numKeys; ++i) {
+        byte[] bytes1 = parseFrom(in);
+        ByteBuffer byteBuffer1 = ByteBuffer.wrap(bytes1);
+        IntelDelegationKey intelDelegationKey = IntelDelegationKey.getRootAsIntelDelegationKey(byteBuffer1);
+        intelkeys.add(intelDelegationKey);
+      }
+
+      prog.setTotal(Phase.LOADING_FSIMAGE, currentStep, numTokens);
+      Counter counter = prog.getCounter(Phase.LOADING_FSIMAGE, currentStep);
+      for (int i = 0; i < numTokens; ++i) {
+        byte[] bytes2 = parseFrom(in);
+        ByteBuffer byteBuffer2 = ByteBuffer.wrap(bytes2);
+        IntelPersistToken intelPersistToken = IntelPersistToken.getRootAsIntelPersistToken(byteBuffer2);
+        inteltokens.add(intelPersistToken);
+        counter.increment();
+      }
+
+      fsn.loadSecretManagerState(null, is, null, intelkeys, inteltokens, null);
     }
 
     private void loadSecretManagerSection(InputStream in, StartupProgress prog,
@@ -336,7 +422,33 @@ public final class FSImageFormatProtobuf {
         counter.increment();
       }
 
-      fsn.loadSecretManagerState(s, keys, tokens);
+      fsn.loadSecretManagerState(s, null, keys, null ,null, tokens);
+    }
+
+
+    private void loadIntelCacheManagerSection(InputStream in, StartupProgress prog,
+                                         Step currentStep) throws IOException {
+      byte[] bytes = parseFrom(in);
+      ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+      IntelCacheManagerSection cs =
+          IntelCacheManagerSection.getRootAsIntelCacheManagerSection(byteBuffer);
+
+      long numPools = cs.numPools();
+      ArrayList<CachePoolInfoProto> pools = Lists
+          .newArrayListWithCapacity((int)numPools);
+      ArrayList<CacheDirectiveInfoProto> directives = Lists
+          .newArrayListWithCapacity((int)cs.numDirectives());
+
+      prog.setTotal(Phase.LOADING_FSIMAGE, currentStep, numPools);
+      Counter counter = prog.getCounter(Phase.LOADING_FSIMAGE, currentStep);
+      for (int i = 0; i < numPools; ++i) {
+        pools.add(CachePoolInfoProto.parseDelimitedFrom(in));
+        counter.increment();
+      }
+      for (int i = 0; i < cs.numDirectives(); ++i)
+        directives.add(CacheDirectiveInfoProto.parseDelimitedFrom(in));
+      fsn.getCacheManager().loadState(
+          new CacheManager.PersistState(null, cs, pools, directives));
     }
 
     private void loadCacheManagerSection(InputStream in, StartupProgress prog,
@@ -356,7 +468,7 @@ public final class FSImageFormatProtobuf {
       for (int i = 0; i < s.getNumDirectives(); ++i)
         directives.add(CacheDirectiveInfoProto.parseDelimitedFrom(in));
       fsn.getCacheManager().loadState(
-          new CacheManager.PersistState(s, pools, directives));
+          new CacheManager.PersistState(s, null, pools, directives));
     }
 
   }
@@ -392,11 +504,25 @@ public final class FSImageFormatProtobuf {
       return saverContext;
     }
 
+    public int commitIntelSection(SectionName name, FlatBufferBuilder fbb) throws IOException {
+      long oldOffset = currentOffset;
+      flushSectionOutputStream();
+      if (codec != null) {
+        sectionOutputStream = codec.createOutputStream(underlyingOutputStream);
+      } else {
+        sectionOutputStream = underlyingOutputStream;
+      }
+      long length = fileChannel.position() - oldOffset;
+      int sectionName = fbb.createString(name.name);
+      long sectionOffset = currentOffset;
+      currentOffset += length;
+      return IntelSection.createIntelSection(fbb, sectionName, length, sectionOffset);
+    }
+
     public void commitSection(FileSummary.Builder summary, SectionName name)
         throws IOException {
       long oldOffset = currentOffset;
       flushSectionOutputStream();
-
       if (codec != null) {
         sectionOutputStream = codec.createOutputStream(underlyingOutputStream);
       } else {
@@ -419,10 +545,21 @@ public final class FSImageFormatProtobuf {
       FileOutputStream fout = new FileOutputStream(file);
       fileChannel = fout.getChannel();
       try {
-        saveInternal(fout, compression, file.getAbsolutePath());
+        saveIntelInternal(fout, compression, file.getAbsolutePath());
       } finally {
         fout.close();
       }
+    }
+
+    private static void saveIntelFileSummary(OutputStream out,
+                                             int serializedLength, byte[] bytes)
+      throws IOException{
+      DataOutputStream dos = new DataOutputStream(out);
+      dos.writeInt(serializedLength);
+      dos.write(bytes);
+      int length = serializedLength + 4;
+      dos.writeInt(length);
+      dos.flush();
     }
 
     private static void saveFileSummary(OutputStream out, FileSummary summary)
@@ -434,24 +571,110 @@ public final class FSImageFormatProtobuf {
       out.write(lengthBytes);
     }
 
-    private void saveInodes(FileSummary.Builder summary) throws IOException {
-      FSImageFormatPBINode.Saver saver = new FSImageFormatPBINode.Saver(this,
-          summary);
+    private void saveIntelInodes(FlatBufferBuilder fbb, ArrayList<Integer> list) throws IOException {
+      FSImageFormatPBINode.Saver saver = new FSImageFormatPBINode.Saver(this, null, fbb);
+      list.add(saver.serializeIntelINodeSection(sectionOutputStream, fbb));
+      list.add(saver.serializeIntelINodeDirectorySection(sectionOutputStream, fbb));
+      list.add(saver.serializeIntelFilesUCSection(sectionOutputStream, fbb));
+    }
 
+    private void saveIntelSnapshots(FlatBufferBuilder fbb, ArrayList<Integer> list)
+        throws IOException {
+      FSImageFormatPBSnapshot.Saver snapshotSaver = new FSImageFormatPBSnapshot.Saver(
+          this, null, fbb,context, context.getSourceNamesystem());
+      list.add(snapshotSaver.serializeIntelSnapshotSection(sectionOutputStream, fbb));
+      list.add(snapshotSaver.serializeIntelSnapshotDiffSection(sectionOutputStream, fbb));
+      list.add(snapshotSaver.serializeIntelINodeReferenceSection(sectionOutputStream, fbb));
+    }
+
+    // abandon method.
+    private void saveInodes(FileSummary.Builder summary) throws IOException {
+      FSImageFormatPBINode.Saver saver = new FSImageFormatPBINode.Saver(this, summary, null);
       saver.serializeINodeSection(sectionOutputStream);
       saver.serializeINodeDirectorySection(sectionOutputStream);
       saver.serializeFilesUCSection(sectionOutputStream);
     }
-
+    // abandon method
     private void saveSnapshots(FileSummary.Builder summary) throws IOException {
       FSImageFormatPBSnapshot.Saver snapshotSaver = new FSImageFormatPBSnapshot.Saver(
-          this, summary, context, context.getSourceNamesystem());
+          this, summary, null,context, context.getSourceNamesystem());
 
       snapshotSaver.serializeSnapshotSection(sectionOutputStream);
       snapshotSaver.serializeSnapshotDiffSection(sectionOutputStream);
       snapshotSaver.serializeINodeReferenceSection(sectionOutputStream);
     }
 
+    private void saveIntelInternal(FileOutputStream fout, FSImageCompression compression, String filePath)
+        throws IOException {
+
+      ArrayList<Integer> listSection = new ArrayList<Integer>();
+
+      StartupProgress prog = NameNode.getStartupProgress();
+      MessageDigest digester = MD5Hash.getDigester();
+
+      underlyingOutputStream = new DigestOutputStream(new BufferedOutputStream(
+              fout), digester);
+      underlyingOutputStream.write(FSImageUtil.MAGIC_HEADER);
+      fileChannel = fout.getChannel();
+
+      FlatBufferBuilder fbb = new FlatBufferBuilder();
+      long disk_version = FSImageUtil.FILE_VERSION;
+      long layout_version = context.getSourceNamesystem().getEffectiveLayoutVersion();
+      int code = 0;
+      codec = compression.getImageCodec();
+      if (codec != null) {
+         code = fbb.createString(codec.getClass().getCanonicalName());
+        sectionOutputStream = codec.createOutputStream(underlyingOutputStream);
+      } else {
+        code = fbb.createString("");
+        sectionOutputStream = underlyingOutputStream;
+      }
+      listSection.add(saveIntelNameSystemSection(fbb)); // success
+      context.checkCancelled();
+      Step step = new Step(StepType.INODES, filePath);
+      prog.beginStep(Phase.SAVING_CHECKPOINT, step);
+      saveIntelInodes(fbb, listSection); // success
+      saveIntelSnapshots(fbb, listSection); // success
+      prog.endStep(Phase.SAVING_CHECKPOINT, step);
+      step = new Step(StepType.DELEGATION_TOKENS, filePath);
+      prog.beginStep(Phase.SAVING_CHECKPOINT, step);
+      listSection.add(saveIntelSecretManagerSection(fbb)); // success
+      prog.endStep(Phase.SAVING_CHECKPOINT, step);
+      step = new Step(StepType.CACHE_POOLS, filePath);
+      prog.beginStep(Phase.SAVING_CHECKPOINT, step);
+      listSection.add(saveIntelCacheManagerSection(fbb)); //success
+      prog.endStep(Phase.SAVING_CHECKPOINT, step);
+      listSection.add(saveIntelStringTableSection(fbb));  // success
+      flushSectionOutputStream();
+
+      Integer[] data = new Integer[listSection.size()];
+      for (int i = 0; i < data.length ; i++) {
+        data[i] = listSection.get(i);
+      }
+      /**
+       * how to construct these data?  Use IntelSection.createIntelSection() will
+       * return an int represent the current section.
+       * construct a section use four param below. Now, see how protobuf op these
+       * four param.
+       * {
+       *    FlatBufferBuilder builder,
+       *    int name,
+       *    long length,
+       *    long offset
+       * }
+       *
+       */
+      int sections = IntelFileSummary.createSectionsVector(fbb, ArrayUtils.toPrimitive(data));
+      int end = IntelFileSummary.createIntelFileSummary
+                    (fbb, disk_version, layout_version, code, sections);
+      IntelFileSummary.finishIntelFileSummaryBuffer(fbb, end);
+      byte[] bytes = fbb.sizedByteArray();
+      saveIntelFileSummary(underlyingOutputStream, bytes.length, bytes);
+      underlyingOutputStream.close();
+      savedDigest = new MD5Hash(digester.digest());
+    }
+
+    // saveImage main method
     private void saveInternal(FileOutputStream fout,
         FSImageCompression compression, String filePath) throws IOException {
       StartupProgress prog = NameNode.getStartupProgress();
@@ -463,6 +686,7 @@ public final class FSImageFormatProtobuf {
 
       fileChannel = fout.getChannel();
 
+      // Will Revise
       FileSummary.Builder b = FileSummary.newBuilder()
           .setOndiskVersion(FSImageUtil.FILE_VERSION)
           .setLayoutVersion(
@@ -510,6 +734,35 @@ public final class FSImageFormatProtobuf {
       savedDigest = new MD5Hash(digester.digest());
     }
 
+    private int saveIntelSecretManagerSection(FlatBufferBuilder fbb) throws IOException {
+      final FSNamesystem fsn = context.getSourceNamesystem();
+      DelegationTokenSecretManager.SecretManagerState state = fsn
+          .saveSecretManagerState();
+
+      ByteBuffer byteBuffer = state.intelSection.getByteBuffer();
+      int size = byteBuffer.capacity() - byteBuffer.position();
+      byte[] bytes = new byte[size];
+      byteBuffer.get(bytes);
+      writeTo(bytes, bytes.length, sectionOutputStream);
+
+      for(IntelDelegationKey intelK : state.intelKeys) {
+        ByteBuffer byteBuffer1 = intelK.keyAsByteBuffer(); // confusing...
+        int size1 = byteBuffer1.capacity() - byteBuffer1.position();
+        byte[] bytes1 = new byte[size1];
+        byteBuffer1.get(bytes1);
+        writeTo(bytes1, bytes1.length, sectionOutputStream);
+      }
+
+      for (IntelPersistToken intelT : state.intelTokens) {
+        ByteBuffer byteBuffer2 = intelT.realUserAsByteBuffer(); // confus...
+        int size2 = byteBuffer2.capacity() - byteBuffer2.position();
+        byte[] bytes2 = new byte[size2];
+        byteBuffer2.get(bytes2);
+        writeTo(bytes2, bytes2.length, sectionOutputStream);
+      }
+     return commitIntelSection(SectionName.SECRET_MANAGER, fbb);
+    }
+
     private void saveSecretManagerSection(FileSummary.Builder summary)
         throws IOException {
       final FSNamesystem fsn = context.getSourceNamesystem();
@@ -525,6 +778,25 @@ public final class FSImageFormatProtobuf {
       commitSection(summary, SectionName.SECRET_MANAGER);
     }
 
+    private int saveIntelCacheManagerSection(FlatBufferBuilder fbb)
+        throws IOException {
+      final FSNamesystem fsn = context.getSourceNamesystem();
+      CacheManager.PersistState state = fsn.getCacheManager().saveState();
+      ByteBuffer byteBuffer = state.intelSection.getByteBuffer();
+      int size = byteBuffer.capacity() - byteBuffer.position();
+      byte[] bytes = new byte[size];
+      byteBuffer.get(bytes);
+      writeTo(bytes, bytes.length, sectionOutputStream);
+
+      for (CachePoolInfoProto p : state.pools)
+        p.writeDelimitedTo(sectionOutputStream);
+
+      for (CacheDirectiveInfoProto p : state.directives)
+        p.writeDelimitedTo(sectionOutputStream);
+
+     return commitIntelSection(SectionName.CACHE_MANAGER, fbb);
+    }
+
     private void saveCacheManagerSection(FileSummary.Builder summary)
         throws IOException {
       final FSNamesystem fsn = context.getSourceNamesystem();
@@ -538,6 +810,35 @@ public final class FSImageFormatProtobuf {
         p.writeDelimitedTo(sectionOutputStream);
 
       commitSection(summary, SectionName.CACHE_MANAGER);
+    }
+
+
+    private int saveIntelNameSystemSection(FlatBufferBuilder fbb) throws IOException{
+      final FSNamesystem fsn = context.getSourceNamesystem();
+      BlockIdManager blockIdManager = fsn.getBlockIdManager();
+      FlatBufferBuilder nsFbb = new FlatBufferBuilder();
+      IntelNameSystemSection.startIntelNameSystemSection(nsFbb);
+      IntelNameSystemSection.addGenstampV1(nsFbb, blockIdManager.getGenerationStampV1());
+      IntelNameSystemSection.addGenstampV1Limit(nsFbb, blockIdManager.getGenerationStampV1Limit());
+      IntelNameSystemSection.addGenstampV2(nsFbb, blockIdManager.getGenerationStampV2());
+      IntelNameSystemSection.addLastAllocatedBlockId(nsFbb, blockIdManager.getLastAllocatedBlockId());
+      IntelNameSystemSection.addTransactionId(nsFbb, context.getTxId());
+      IntelNameSystemSection.addNamespaceId(nsFbb, fsn.unprotectedGetNamespaceInfo().getNamespaceID());
+      if (fsn.isRollingUpgrade()) {
+        IntelNameSystemSection.addRollingUpgradeStartTime(nsFbb, fsn.getRollingUpgradeInfo().getStartTime());
+      }
+      int offset = IntelNameSystemSection.endIntelNameSystemSection(nsFbb);
+      IntelNameSystemSection.finishIntelNameSystemSectionBuffer(nsFbb, offset);
+      byte[] bytes = nsFbb.sizedByteArray();
+      writeTo(bytes, bytes.length, sectionOutputStream);
+      return commitIntelSection(SectionName.NS_INFO ,fbb);
+    }
+
+    public static void writeTo(byte[] b, int serialLength , OutputStream outputStream) throws IOException {
+      DataOutputStream dos = new DataOutputStream(outputStream);
+      dos.writeInt(serialLength);
+      dos.write(b);
+      dos.flush();
     }
 
     private void saveNameSystemSection(FileSummary.Builder summary)
@@ -565,6 +866,57 @@ public final class FSImageFormatProtobuf {
       s.writeDelimitedTo(out);
 
       commitSection(summary, SectionName.NS_INFO);
+    }
+
+
+    private int saveIntelStringTableSection(FlatBufferBuilder fbb)
+        throws IOException {
+      OutputStream out = sectionOutputStream;
+      FlatBufferBuilder stsfbb = new FlatBufferBuilder();
+      FlatBufferBuilder entryfbb = new FlatBufferBuilder();
+      int inv = IntelStringTableSection.createIntelStringTableSection(stsfbb, saverContext.stringMap.size());
+      IntelStringTableSection.finishIntelStringTableSectionBuffer(stsfbb, inv);
+      byte[] bytes = stsfbb.sizedByteArray();
+      writeTo(bytes, bytes.length, out);
+
+      for (Entry<String, Integer> e : saverContext.stringMap.entrySet()) {
+        int offset = IntelEntry.createIntelEntry(entryfbb, e.getValue(), entryfbb.createString(e.getKey()));
+        IntelEntry.finishIntelEntryBuffer(entryfbb, offset);
+        byte[] bytes1 = entryfbb.sizedByteArray();
+        writeTo(bytes1, bytes1.length, out);
+      }
+      return commitIntelSection(SectionName.STRING_TABLE, fbb);
+    }
+
+
+    private int saveIntelStringTableSectionV2(FlatBufferBuilder fbb)
+        throws IOException {
+      OutputStream out = sectionOutputStream;
+
+      int numEntry = saverContext.stringMap.size();
+      IntelStringTableSection.createIntelStringTableSection(fbb, numEntry);
+
+      ByteBuffer byteBuffer = fbb.dataBuffer();
+      int serializedLength = byteBuffer.capacity() - byteBuffer.position();
+      byte[] bytes = new byte[serializedLength];
+      byteBuffer.get(bytes);
+      DataOutputStream dos = new DataOutputStream(out);
+      dos.write(serializedLength);
+      dos.write(bytes);
+      dos.flush();
+      for (Entry<String, Integer> e : saverContext.stringMap.entrySet()) {
+        IntelEntry.createIntelEntry(fbb, e.getValue(), fbb.createString(e.getKey()));
+        ByteBuffer byteBuffer1 = fbb.dataBuffer();
+        byteBuffer1 = fbb.dataBuffer();
+        int serializedLength1 = byteBuffer1.capacity() - byteBuffer1.position();
+        byte[] bytes1 = new byte[serializedLength1];
+        byteBuffer1.get(bytes1);
+        DataOutputStream dos1 = new DataOutputStream(out);
+        dos1.write(serializedLength);
+        dos1.write(bytes);
+        dos1.flush();
+      }
+      return commitIntelSection(SectionName.STRING_TABLE, fbb);
     }
 
     private void saveStringTableSection(FileSummary.Builder summary)
@@ -614,6 +966,10 @@ public final class FSImageFormatProtobuf {
     private SectionName(String name) {
       this.name = name;
     }
+  }
+
+  private static int getIntelOndiskTrunkSize(Table table) {
+    return 4 + table.getByteBuffer().capacity() - table.getByteBuffer().position();
   }
 
   private static int getOndiskTrunkSize(com.google.protobuf.GeneratedMessage s) {
