@@ -20,6 +20,7 @@ package org.apache.hadoop.io.erasurecode;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.io.erasurecode.coder.RSErasureEncoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.*;
 
 /**
@@ -115,7 +116,7 @@ public final class CodecUtil {
    * @param numParityUnits number of parity units in a coding group
    * @return raw coder
    */
-  public static RawErasureCoder createRawCoder(Configuration conf,
+  private static RawErasureCoder createRawCoder(Configuration conf,
       String rawCoderFactoryKey, boolean isEncoder, int numDataUnits,
                                                int numParityUnits) {
 
@@ -142,5 +143,10 @@ public final class CodecUtil {
 
     return isEncoder ? fact.createEncoder(numDataUnits, numParityUnits) :
             fact.createDecoder(numDataUnits, numParityUnits);
+  }
+
+  public static RSErasureEncoder createRSEncoder(
+      int numDataUnits, int numParityUnits) {
+    return new RSErasureEncoder(numDataUnits, numParityUnits);
   }
 }

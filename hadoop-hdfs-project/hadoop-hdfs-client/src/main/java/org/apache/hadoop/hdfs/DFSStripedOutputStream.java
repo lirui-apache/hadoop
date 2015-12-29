@@ -52,6 +52,9 @@ import org.apache.hadoop.hdfs.util.StripedBlockUtil;
 import org.apache.hadoop.io.MultipleIOException;
 import org.apache.hadoop.io.erasurecode.CodecUtil;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicy;
+import org.apache.hadoop.io.erasurecode.ECBlock;
+import org.apache.hadoop.io.erasurecode.ECBlockGroup;
+import org.apache.hadoop.io.erasurecode.coder.ErasureCoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
 import org.apache.hadoop.util.DataChecksum;
 import org.apache.hadoop.util.Progressable;
@@ -239,11 +242,27 @@ public class DFSStripedOutputStream extends DFSOutputStream {
     }
   }
 
+  private static class ByteBufferBlock extends ECBlock {
+    private final ByteBuffer buffer;
+
+    public ByteBufferBlock(boolean isParity, boolean isErased,
+        ByteBuffer buffer) {
+      super(isParity, isErased);
+      this.buffer = buffer;
+    }
+
+    public ByteBuffer getBuffer() {
+      return buffer;
+    }
+  }
+
   private final Coordinator coordinator;
   private final CellBuffers cellBuffers;
-  private final RawErasureEncoder encoder;
+  //private final RawErasureEncoder encoder;
   private final List<StripedDataStreamer> streamers;
   private final DFSPacket[] currentPackets; // current Packet of each streamer
+  private final ECBlockGroup ecBlockGroup;
+  private final ErasureCoder encoder;
 
   /** Size of each striping cell, must be a multiple of bytesPerChecksum */
   private final int cellSize;
@@ -274,8 +293,7 @@ public class DFSStripedOutputStream extends DFSOutputStream {
     failedStreamers = new ArrayList<>();
     corruptBlockCountMap = new LinkedHashMap<>();
 
-    encoder = CodecUtil.createRSRawEncoder(dfsClient.getConfiguration(),
-        numDataBlocks, numParityBlocks);
+    encoder = CodecUtil.createRSEncoder(numDataBlocks, numParityBlocks);
 
     coordinator = new Coordinator(numAllBlocks);
     try {
@@ -294,6 +312,23 @@ public class DFSStripedOutputStream extends DFSOutputStream {
     }
     currentPackets = new DFSPacket[streamers.size()];
     setCurrentStreamer(0);
+    ecBlockGroup = prepareBlkGroup();
+  }
+
+  private ECBlockGroup prepareBlkGroup() {
+    Preconditions.checkNotNull(cellBuffers);
+    ByteBufferBlock[] dataBlocks = new ByteBufferBlock[numDataBlocks];
+    ByteBufferBlock[] parityBlocks =
+        new ByteBufferBlock[numAllBlocks - numDataBlocks];
+    ByteBuffer[] buffers = cellBuffers.buffers;
+    for (int i = 0; i < dataBlocks.length; i++) {
+      dataBlocks[i] = new ByteBufferBlock(false, false, buffers[i]);
+    }
+    for (int i = 0; i < parityBlocks.length; i++) {
+      parityBlocks[i] = new ByteBufferBlock(
+          true, false, buffers[i + numDataBlocks]);
+    }
+    return new ECBlockGroup(dataBlocks, parityBlocks);
   }
 
   StripedDataStreamer getStripedDataStreamer(int i) {
