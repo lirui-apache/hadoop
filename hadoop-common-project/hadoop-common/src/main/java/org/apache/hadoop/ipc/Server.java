@@ -972,6 +972,7 @@ public abstract class Server {
           call = iter.next();
           if (now > call.timestamp + PURGE_INTERVAL) {
             closeConnection(call.connection);
+            mayLogCallOfInterest(call, "Purged");
             break;
           }
         }
@@ -1005,11 +1006,14 @@ public abstract class Server {
           if (LOG.isDebugEnabled()) {
             LOG.debug(getName() + ": responding to " + call);
           }
+          mayLogCallOfInterest(call, "Responding to");
           //
           // Send as much data as we can in the non-blocking fashion
           //
           int numBytes = channelWrite(channel, call.rpcResponse);
           if (numBytes < 0) {
+            mayLogCallOfInterest(call,
+                "Negative numBytes of response written for");
             return true;
           }
           if (!call.rpcResponse.hasRemaining()) {
@@ -1025,6 +1029,7 @@ public abstract class Server {
               LOG.debug(getName() + ": responding to " + call
                   + " Wrote " + numBytes + " bytes.");
             }
+            mayLogCallOfInterest(call, "Wrote full response for");
           } else {
             //
             // If we were unable to write the entire response out, then 
@@ -1053,6 +1058,7 @@ public abstract class Server {
               LOG.debug(getName() + ": responding to " + call
                   + " Wrote partial " + numBytes + " bytes.");
             }
+            mayLogCallOfInterest(call, "Wrote partial response for");
           }
           error = false;              // everything went off well
         }
@@ -2006,6 +2012,17 @@ public abstract class Server {
     }
   }
 
+  private static boolean isCallOfInterest(Call call) {
+    return call.rpcRequest.toString().endsWith(".allocate");
+  }
+
+  private static void mayLogCallOfInterest(Call call, String prefix) {
+    if (isCallOfInterest(call)) {
+      LOG.info(prefix + " allocation call. ID: " + call.callId +
+          ", client: " + call.connection);
+    }
+  }
+
   /** Handles queued calls . */
   private class Handler extends Thread {
     public Handler(int instanceNumber) {
@@ -2033,6 +2050,7 @@ public abstract class Server {
 
           CurCall.set(call);
           try {
+            mayLogCallOfInterest(call, "Processing");
             // Make the call as the user via Subject.doAs, thus associating
             // the call with the Subject
             if (call.connection.user == null) {
@@ -2101,6 +2119,7 @@ public abstract class Server {
                   + call.toString());
               buf = new ByteArrayOutputStream(INITIAL_RESP_BUF_SIZE);
             }
+            mayLogCallOfInterest(call, "Queue response for");
             responder.doRespond(call);
           }
         } catch (InterruptedException e) {
