@@ -1300,6 +1300,19 @@ public class Client {
     return call(rpcKind, rpcRequest, remoteId, RPC.RPC_SERVICE_CLASS_DEFAULT);
   }
 
+  private static boolean isCallOfInterest(Call call) {
+    if (call != null && call.rpcRequest != null) {
+      return call.rpcRequest.toString().endsWith(".allocate");
+    }
+    return false;
+  }
+
+  private static void mayLogCallOfInterest(Call call, String prefix) {
+    if (isCallOfInterest(call)) {
+      LOG.info(prefix + " allocation call. ID: " + call.id);
+    }
+  }
+
   /** 
    * Make a call, passing <code>rpcRequest</code>, to the IPC server defined by
    * <code>remoteId</code>, returning the rpc respond.
@@ -1325,6 +1338,7 @@ public class Client {
       LOG.warn("interrupted waiting to send rpc request to server", e);
       throw new IOException(e);
     }
+    mayLogCallOfInterest(call, "Sent");
 
     boolean interrupted = false;
     synchronized (call) {

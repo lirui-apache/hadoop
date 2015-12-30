@@ -361,6 +361,8 @@ public class ApplicationMasterService extends AbstractService implements
 
     if ((request.getResponseId() + 1) == lastResponse.getResponseId()) {
       /* old heartbeat */
+      LOG.info("Received old heartbeat with response id " +
+          request.getResponseId());
       return lastResponse;
     } else if (request.getResponseId() + 1 < lastResponse.getResponseId()) {
       LOG.error("Invalid responseid from appAttemptId " + appAttemptId);
@@ -479,6 +481,8 @@ public class ApplicationMasterService extends AbstractService implements
         return resync;
       }
 
+      LOG.info("Generated allocation response for response id " +
+          request.getResponseId());
       return allocateResponse;
     }
   }

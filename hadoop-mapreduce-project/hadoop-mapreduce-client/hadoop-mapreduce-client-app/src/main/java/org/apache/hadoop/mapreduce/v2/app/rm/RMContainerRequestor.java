@@ -158,6 +158,7 @@ public abstract class RMContainerRequestor extends RMCommunicator {
           super.getApplicationProgress(), new ArrayList<ResourceRequest>(ask),
           new ArrayList<ContainerId>(release), blacklistRequest);
     AllocateResponse allocateResponse;
+    LOG.info("Sending allocation request with response id " + lastResponseID);
     try {
       allocateResponse = scheduler.allocate(allocateRequest);
     } catch (YarnException e) {

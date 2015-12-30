@@ -1885,6 +1885,7 @@ public abstract class Server {
           rpcRequest, this, ProtoUtil.convert(header.getRpcKind()), header
               .getClientId().toByteArray());
       callQueue.put(call);              // queue the call; maybe blocked here
+      mayLogCallOfInterest(call, "Received");
       incRpcCount();  // Increment the rpc count
     }
 
