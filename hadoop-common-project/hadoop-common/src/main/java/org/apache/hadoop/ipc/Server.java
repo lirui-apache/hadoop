@@ -2013,7 +2013,10 @@ public abstract class Server {
   }
 
   private static boolean isCallOfInterest(Call call) {
-    return call.rpcRequest.toString().endsWith(".allocate");
+    if (call != null && call.rpcRequest != null) {
+      return call.rpcRequest.toString().endsWith(".allocate");
+    }
+    return false;
   }
 
   private static void mayLogCallOfInterest(Call call, String prefix) {
