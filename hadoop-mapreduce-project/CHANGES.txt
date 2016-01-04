@@ -454,6 +454,12 @@ Release 2.8.0 - UNRELEASED
     MAPREDUCE-6566. Add retry support to mapreduce CLI tool.
     (Varun Vasudev via xgong)
 
+    MAPREDUCE-6574. MR AM should print host of failed tasks. 
+    (Mohammad Shahid Khan via wangda)
+
+    MAPREDUCE-6584. Remove trailing whitespaces from mapred-default.xml.
+    (aajisaka)
+
   OPTIMIZATIONS
 
     MAPREDUCE-6376. Add avro binary support for jhist files (Ray Chiang via
@@ -673,6 +679,9 @@ Release 2.8.0 - UNRELEASED
 
    MAPREDUCE-6419. JobHistoryServer doesn't sort properly based on Job ID when Job id's 
    exceed 9999. (Mohammad Shahid Khan via rohithsharmaks)
+
+    MAPREDUCE-6589. TestTaskLog outputs a log under directory other than
+    target/test-dir. (aajisaka)
 
 Release 2.7.3 - UNRELEASED
 

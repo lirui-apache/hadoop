@@ -331,7 +331,7 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
   public synchronized void stop(RMAppAttemptState rmAppAttemptFinalState) {
     // Cleanup all scheduling information
     isStopped = true;
-    appSchedulingInfo.stop(rmAppAttemptFinalState);
+    appSchedulingInfo.stop();
   }
 
   public synchronized boolean isStopped() {
@@ -694,17 +694,20 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
         Resources.clone(attemptResourceUsage.getReserved());
     Resource cluster = rmContext.getScheduler().getClusterResource();
     ResourceCalculator calc = rmContext.getScheduler().getResourceCalculator();
-    float queueUsagePerc = calc.divide(cluster, usedResourceClone, Resources
-        .multiply(cluster, queue.getQueueInfo(false, false).getCapacity()))
-        * 100;
-    float clusterUsagePerc =
-        calc.divide(cluster, usedResourceClone, cluster) * 100;
+    float queueUsagePerc = 0.0f;
+    float clusterUsagePerc = 0.0f;
+    if (!calc.isInvalidDivisor(cluster)) {
+      queueUsagePerc =
+          calc.divide(cluster, usedResourceClone, Resources.multiply(cluster,
+              queue.getQueueInfo(false, false).getCapacity())) * 100;
+      clusterUsagePerc = calc.divide(cluster, usedResourceClone, cluster) * 100;
+    }
     return ApplicationResourceUsageReport.newInstance(liveContainers.size(),
         reservedContainers.size(), usedResourceClone, reservedResourceClone,
         Resources.add(usedResourceClone, reservedResourceClone),
         runningResourceUsage.getMemorySeconds(),
-        runningResourceUsage.getVcoreSeconds(),
-        queueUsagePerc, clusterUsagePerc);
+        runningResourceUsage.getVcoreSeconds(), queueUsagePerc,
+        clusterUsagePerc);
   }
 
   public synchronized Map<ContainerId, RMContainer> getLiveContainersMap() {

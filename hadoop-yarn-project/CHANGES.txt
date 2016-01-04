@@ -76,6 +76,16 @@ Release 2.9.0 - UNRELEASED
     YARN-4341. add doc about timeline performance tool usage (Chang Li via
     sjlee)
 
+    YARN-4417. Make RM and Timeline-server REST APIs more consistent.
+    (wtan via jianhe)
+
+    YARN-3480. Remove attempts that are beyond max-attempt limit from state
+    store. (Jun Gong via jianhe)
+
+    YARN-4522. Queue acl can be checked at app submission. (Jian He via wangda)
+
+    YARN-4524. Cleanup AppSchedulingInfo. (Karthik Kambatla via wangda)
+
   OPTIMIZATIONS
 
   BUG FIXES
@@ -654,6 +664,8 @@ Release 2.8.0 - UNRELEASED
     YARN-4290. Add -showDetails option to YARN Nodes CLI to print all nodes reports
     information. (Sunil G via wangda)
 
+    YARN-4098. Document ApplicationPriority feature. (Rohith Sharma K S via jianhe)
+
   OPTIMIZATIONS
 
     YARN-3339. TestDockerContainerExecutor should pull a single image and not
@@ -1194,6 +1206,9 @@ Release 2.8.0 - UNRELEASED
     YARN-4400. AsyncDispatcher.waitForDrained should be final. (Daniel Templeton 
     via junping_du)
 
+    YARN-1382. Remove unusableRMNodesConcurrentSet (never used) in NodeListManager
+    to get rid of memory leak. (Rohith Sharma K S via junping_du)
+
 Release 2.7.3 - UNRELEASED
 
   INCOMPATIBLE CHANGES
@@ -1244,6 +1259,10 @@ Release 2.7.3 - UNRELEASED
 
     YARN-4452. NPE when submit Unmanaged application. (Naganarasimha G R via
     junping_du)
+
+    YARN-4315. NaN in Queue percentage for cluster apps page. (Bibin A Chundatt via wangda)
+
+    YARN-4510. Fix SLS startup failure caused by NPE. (Bibin A Chundatt via wangda)
 
 Release 2.7.2 - UNRELEASED
 

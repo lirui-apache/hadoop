@@ -400,6 +400,9 @@ Trunk (Unreleased)
     HDFS-9580. TestComputeInvalidateWork#testDatanodeReRegistration failed
     due to unexpected number of invalidate blocks. (Wei-Chiu Chuang via zhz)
 
+    HDFS-9376. TestSeveralNameNodes fails occasionally.
+    (Masatake Iwasaki via cnauroth)
+
     BREAKDOWN OF HDFS-7285 SUBTASKS AND RELATED JIRAS
 
       HDFS-7347. Configurable erasure coding policy for individual files and
@@ -2546,6 +2549,9 @@ Release 2.8.0 - UNRELEASED
 
     HDFS-9458. TestBackupNode always binds to port 50070, which can cause bind
     failures. (Xiao Chen via cnauroth)
+
+    HDFS-7553. fix the TestDFSUpgradeWithHA due to BindException.
+    (Xiao Chen via cnauroth)
 
 Release 2.7.3 - UNRELEASED
 
