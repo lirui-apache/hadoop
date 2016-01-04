@@ -54,8 +54,9 @@ import org.apache.hadoop.io.erasurecode.CodecUtil;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicy;
 import org.apache.hadoop.io.erasurecode.ECBlock;
 import org.apache.hadoop.io.erasurecode.ECBlockGroup;
+import org.apache.hadoop.io.erasurecode.ECChunk;
 import org.apache.hadoop.io.erasurecode.coder.ErasureCoder;
-import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
+import org.apache.hadoop.io.erasurecode.coder.ErasureCodingStep;
 import org.apache.hadoop.util.DataChecksum;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.Time;
@@ -258,7 +259,6 @@ public class DFSStripedOutputStream extends DFSOutputStream {
 
   private final Coordinator coordinator;
   private final CellBuffers cellBuffers;
-  //private final RawErasureEncoder encoder;
   private final List<StripedDataStreamer> streamers;
   private final DFSPacket[] currentPackets; // current Packet of each streamer
   private final ECBlockGroup ecBlockGroup;
@@ -361,17 +361,22 @@ public class DFSStripedOutputStream extends DFSOutputStream {
 
   /**
    * Encode the buffers, i.e. compute parities.
-   *
-   * @param buffers data buffers + parity buffers
    */
-  private static void encode(RawErasureEncoder encoder, int numData,
-      ByteBuffer[] buffers) {
-    final ByteBuffer[] dataBuffers = new ByteBuffer[numData];
-    final ByteBuffer[] parityBuffers = new ByteBuffer[buffers.length - numData];
-    System.arraycopy(buffers, 0, dataBuffers, 0, dataBuffers.length);
-    System.arraycopy(buffers, numData, parityBuffers, 0, parityBuffers.length);
+  private void encode() {
+    ErasureCodingStep step = encoder.calculateCoding(ecBlockGroup);
+    ByteBufferBlock[] inputBlocks = (ByteBufferBlock[]) step.getInputBlocks();
+    ByteBufferBlock[] outputBlocks = (ByteBufferBlock[]) step.getOutputBlocks();
+    ECChunk[] inputChunks = getChunkFromBlock(inputBlocks);
+    ECChunk[] outputChunks = getChunkFromBlock(outputBlocks);
+    step.performCoding(inputChunks, outputChunks);
+  }
 
-    encoder.encode(dataBuffers, parityBuffers);
+  private static ECChunk[] getChunkFromBlock(ByteBufferBlock[] blocks) {
+    ECChunk[] chunks = new ECChunk[blocks.length];
+    for (int i = 0; i < chunks.length; i++) {
+      chunks[i] = new ECChunk(blocks[i].buffer);
+    }
+    return chunks;
   }
 
   /**
@@ -892,7 +897,7 @@ public class DFSStripedOutputStream extends DFSOutputStream {
       return;
     }
     //encode the data cells
-    encode(encoder, numDataBlocks, buffers);
+    encode();
     for (int i = numDataBlocks; i < numAllBlocks; i++) {
       writeParity(i, buffers[i], cellBuffers.getChecksumArray(i));
     }
