@@ -116,7 +116,7 @@ public final class CodecUtil {
    * @param numParityUnits number of parity units in a coding group
    * @return raw coder
    */
-  private static RawErasureCoder createRawCoder(Configuration conf,
+  public static RawErasureCoder createRawCoder(Configuration conf,
       String rawCoderFactoryKey, boolean isEncoder, int numDataUnits,
                                                int numParityUnits) {
 
@@ -145,6 +145,11 @@ public final class CodecUtil {
             fact.createDecoder(numDataUnits, numParityUnits);
   }
 
+  /**
+   * Create an {@link RSErasureEncoder}.
+   * @param numDataUnits number of data units in a coding group
+   * @param numParityUnits number of parity units in a coding group
+   */
   public static RSErasureEncoder createRSEncoder(
       int numDataUnits, int numParityUnits) {
     return new RSErasureEncoder(numDataUnits, numParityUnits);
