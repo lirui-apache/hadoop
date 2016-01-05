@@ -26,7 +26,7 @@ import org.apache.hadoop.classification.InterfaceAudience;
  * details. We can have something like HdfsBlock extend it.
  */
 @InterfaceAudience.Private
-public class ECBlock {
+abstract public class ECBlock {
 
   private boolean isParity;
   private boolean isErased;
@@ -80,4 +80,22 @@ public class ECBlock {
     return isErased;
   }
 
+  public static ECChunk[] getECChunks(ECBlock[] blocks) {
+    if (blocks == null) {
+      return null;
+    }
+    ECChunk[] chunks = new ECChunk[blocks.length];
+    for (int i = 0; i < chunks.length; i++) {
+      if (blocks[i] != null) {
+        chunks[i] = blocks[i].getNextChunk();
+      }
+    }
+    return chunks;
+  }
+
+  /**
+   * Get the next {@link ECChunk} in this block. Return null if there's no more
+   * chunks.
+   */
+  abstract public ECChunk getNextChunk();
 }

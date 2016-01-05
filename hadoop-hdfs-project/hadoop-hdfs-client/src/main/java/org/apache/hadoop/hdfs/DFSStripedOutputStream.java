@@ -245,15 +245,22 @@ public class DFSStripedOutputStream extends DFSOutputStream {
 
   private static class ByteBufferBlock extends ECBlock {
     private final ByteBuffer buffer;
+    private final ECChunk chunk;
 
     public ByteBufferBlock(boolean isParity, boolean isErased,
         ByteBuffer buffer) {
       super(isParity, isErased);
       this.buffer = buffer;
+      chunk = new ECChunk(buffer);
     }
 
     public ByteBuffer getBuffer() {
       return buffer;
+    }
+
+    @Override
+    public ECChunk getNextChunk() {
+      return chunk;
     }
   }
 
@@ -293,7 +300,8 @@ public class DFSStripedOutputStream extends DFSOutputStream {
     failedStreamers = new ArrayList<>();
     corruptBlockCountMap = new LinkedHashMap<>();
 
-    encoder = CodecUtil.createRSEncoder(numDataBlocks, numParityBlocks);
+    encoder = CodecUtil.createErasureEncoder(dfsClient.getConfiguration(),
+        numDataBlocks, numParityBlocks);
 
     coordinator = new Coordinator(numAllBlocks);
     try {
@@ -364,19 +372,11 @@ public class DFSStripedOutputStream extends DFSOutputStream {
    */
   private void encode() {
     ErasureCodingStep step = encoder.calculateCoding(ecBlockGroup);
-    ByteBufferBlock[] inputBlocks = (ByteBufferBlock[]) step.getInputBlocks();
-    ByteBufferBlock[] outputBlocks = (ByteBufferBlock[]) step.getOutputBlocks();
-    ECChunk[] inputChunks = getChunkFromBlock(inputBlocks);
-    ECChunk[] outputChunks = getChunkFromBlock(outputBlocks);
+    ECBlock[] inputBlocks = step.getInputBlocks();
+    ECBlock[] outputBlocks = step.getOutputBlocks();
+    ECChunk[] inputChunks = ECBlock.getECChunks(inputBlocks);
+    ECChunk[] outputChunks = ECBlock.getECChunks(outputBlocks);
     step.performCoding(inputChunks, outputChunks);
-  }
-
-  private static ECChunk[] getChunkFromBlock(ByteBufferBlock[] blocks) {
-    ECChunk[] chunks = new ECChunk[blocks.length];
-    for (int i = 0; i < chunks.length; i++) {
-      chunks[i] = new ECChunk(blocks[i].buffer);
-    }
-    return chunks;
   }
 
   /**

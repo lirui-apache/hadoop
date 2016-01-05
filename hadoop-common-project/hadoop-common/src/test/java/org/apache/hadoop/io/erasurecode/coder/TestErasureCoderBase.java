@@ -48,6 +48,11 @@ public abstract class TestErasureCoderBase extends TestCoderBase {
     public TestBlock(ECChunk[] chunks) {
       this.chunks = chunks;
     }
+
+    @Override
+    public ECChunk getNextChunk() {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

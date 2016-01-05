@@ -20,8 +20,16 @@ package org.apache.hadoop.io.erasurecode;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.io.erasurecode.coder.ErasureCoder;
 import org.apache.hadoop.io.erasurecode.coder.RSErasureEncoder;
-import org.apache.hadoop.io.erasurecode.rawcoder.*;
+import org.apache.hadoop.io.erasurecode.rawcoder.RSRawDecoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.RSRawEncoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureCoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureCoderFactory;
+import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureDecoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.XORRawDecoder;
+import org.apache.hadoop.io.erasurecode.rawcoder.XORRawEncoder;
 
 /**
  * A codec & coder utility to help create raw coders conveniently.
@@ -146,11 +154,11 @@ public final class CodecUtil {
   }
 
   /**
-   * Create an {@link RSErasureEncoder}.
+   * Create an {@link ErasureCoder} to encode a block group.
    * @param numDataUnits number of data units in a coding group
    * @param numParityUnits number of parity units in a coding group
    */
-  public static RSErasureEncoder createRSEncoder(
+  public static ErasureCoder createErasureEncoder(Configuration conf,
       int numDataUnits, int numParityUnits) {
     return new RSErasureEncoder(numDataUnits, numParityUnits);
   }
