@@ -209,6 +209,7 @@ public class TestClientRMService {
 
     // Now make the node unhealthy.
     node.nodeHeartbeat(false);
+    rm.NMwaitForState(node.getNodeId(), NodeState.UNHEALTHY);
 
     // Call again
     nodeReports = client.getClusterNodes(request).getNodeReports();
@@ -467,7 +468,8 @@ public class TestClientRMService {
     QueueACLsManager mockQueueACLsManager = mock(QueueACLsManager.class);
     when(
         mockQueueACLsManager.checkAccess(any(UserGroupInformation.class),
-            any(QueueACL.class), anyString())).thenReturn(true);
+            any(QueueACL.class), anyString(), any(ApplicationId.class),
+            anyString())).thenReturn(true);
     return new ClientRMService(rmContext, yarnScheduler, appManager,
         mockAclsManager, mockQueueACLsManager, null);
   }
@@ -568,7 +570,8 @@ public class TestClientRMService {
     ApplicationACLsManager mockAclsManager = mock(ApplicationACLsManager.class);
     QueueACLsManager mockQueueACLsManager = mock(QueueACLsManager.class);
     when(mockQueueACLsManager.checkAccess(any(UserGroupInformation.class),
-        any(QueueACL.class), anyString())).thenReturn(true);
+        any(QueueACL.class), anyString(), any(ApplicationId.class),
+        anyString())).thenReturn(true);
     when(mockAclsManager.checkAccess(any(UserGroupInformation.class),
         any(ApplicationAccessType.class), anyString(),
         any(ApplicationId.class))).thenReturn(true);
@@ -594,7 +597,8 @@ public class TestClientRMService {
     QueueACLsManager mockQueueACLsManager1 =
         mock(QueueACLsManager.class);
     when(mockQueueACLsManager1.checkAccess(any(UserGroupInformation.class),
-        any(QueueACL.class), anyString())).thenReturn(false);
+        any(QueueACL.class), anyString(), any(ApplicationId.class),
+        anyString())).thenReturn(false);
     when(mockAclsManager1.checkAccess(any(UserGroupInformation.class),
         any(ApplicationAccessType.class), anyString(),
         any(ApplicationId.class))).thenReturn(false);
@@ -633,7 +637,8 @@ public class TestClientRMService {
 
     QueueACLsManager mockQueueACLsManager = mock(QueueACLsManager.class);
     when(mockQueueACLsManager.checkAccess(any(UserGroupInformation.class),
-            any(QueueACL.class), anyString())).thenReturn(true);
+        any(QueueACL.class), anyString(), any(ApplicationId.class),
+        anyString())).thenReturn(true);
     ClientRMService rmService =
         new ClientRMService(rmContext, yarnScheduler, appManager,
             mockAclsManager, mockQueueACLsManager, null);
@@ -721,7 +726,8 @@ public class TestClientRMService {
     ApplicationACLsManager mockAclsManager = mock(ApplicationACLsManager.class);
     QueueACLsManager mockQueueACLsManager = mock(QueueACLsManager.class);
     when(mockQueueACLsManager.checkAccess(any(UserGroupInformation.class),
-        any(QueueACL.class), anyString())).thenReturn(true);
+        any(QueueACL.class), anyString(), any(ApplicationId.class),
+        anyString())).thenReturn(true);
     ClientRMService rmService =
         new ClientRMService(rmContext, yarnScheduler, appManager,
             mockAclsManager, mockQueueACLsManager, null);
@@ -1333,10 +1339,10 @@ public class TestClientRMService {
 
     appPriority = 11;
     ClientRMService rmService = rm.getClientRMService();
-    testAplicationPriorityUpdation(rmService, app1, appPriority, maxPriority);
+    testApplicationPriorityUpdation(rmService, app1, appPriority, maxPriority);
 
     appPriority = 9;
-    testAplicationPriorityUpdation(rmService, app1, appPriority, appPriority);
+    testApplicationPriorityUpdation(rmService, app1, appPriority, appPriority);
 
     rm.killApp(app1.getApplicationId());
     rm.waitForState(app1.getApplicationId(), RMAppState.KILLED);
@@ -1365,7 +1371,7 @@ public class TestClientRMService {
     rm.stop();
   }
 
-  private void testAplicationPriorityUpdation(ClientRMService rmService,
+  private void testApplicationPriorityUpdation(ClientRMService rmService,
       RMApp app1, int tobeUpdatedPriority, int expected) throws YarnException,
       IOException {
     UpdateApplicationPriorityRequest updateRequest =

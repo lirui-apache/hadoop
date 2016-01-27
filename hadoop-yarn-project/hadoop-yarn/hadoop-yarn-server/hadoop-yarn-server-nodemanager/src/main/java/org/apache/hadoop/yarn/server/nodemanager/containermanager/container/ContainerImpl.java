@@ -99,7 +99,7 @@ public class ContainerImpl implements Container {
   private boolean wasLaunched;
   private long containerLocalizationStartTime;
   private long containerLaunchStartTime;
-  private static Clock clock = new SystemClock();
+  private static Clock clock = SystemClock.getInstance();
 
   /** The NM-wide configuration - not specific to this container */
   private final Configuration daemonConf;
@@ -328,6 +328,7 @@ public class ContainerImpl implements Container {
     .addTransition(ContainerState.CONTAINER_CLEANEDUP_AFTER_KILL,
         ContainerState.CONTAINER_CLEANEDUP_AFTER_KILL,
         EnumSet.of(ContainerEventType.KILL_CONTAINER,
+            ContainerEventType.RESOURCE_FAILED,
             ContainerEventType.CONTAINER_EXITED_WITH_SUCCESS,
             ContainerEventType.CONTAINER_EXITED_WITH_FAILURE))
 

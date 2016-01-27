@@ -278,7 +278,11 @@ public class YarnConfiguration extends Configuration {
   public static final String YARN_ACL_ENABLE = 
     YARN_PREFIX + "acl.enable";
   public static final boolean DEFAULT_YARN_ACL_ENABLE = false;
-  
+
+  public static boolean isAclEnabled(Configuration conf) {
+    return conf.getBoolean(YARN_ACL_ENABLE, DEFAULT_YARN_ACL_ENABLE);
+  }
+
   /** ACL of who can be admin of YARN cluster.*/
   public static final String YARN_ADMIN_ACL = 
     YARN_PREFIX + "admin.acl";
@@ -544,6 +548,11 @@ public class YarnConfiguration extends Configuration {
   /** number of zookeeper operation retry times in ActiveStandbyElector */
   public static final String RM_HA_FC_ELECTOR_ZK_RETRIES_KEY = RM_HA_PREFIX
       + "failover-controller.active-standby-elector.zk.retries";
+
+  @Private
+  public static final String CURATOR_LEADER_ELECTOR =
+      RM_HA_PREFIX + "curator-leader-elector.enabled";
+  public static final boolean DEFAULT_CURATOR_LEADER_ELECTOR_ENABLED = false;
 
   ////////////////////////////////
   // RM state store configs
@@ -928,6 +937,18 @@ public class YarnConfiguration extends Configuration {
   public static final float
       DEFAULT_NM_MEMORY_RESOURCE_CGROUPS_SOFT_LIMIT_PERCENTAGE =
       90.0f;
+
+  @Private
+  public static final String NM_CPU_RESOURCE_PREFIX = NM_PREFIX
+      + "resource.cpu.";
+
+  /** Enable cpu isolation. */
+  @Private
+  public static final String NM_CPU_RESOURCE_ENABLED =
+      NM_CPU_RESOURCE_PREFIX + "enabled";
+
+  @Private
+  public static final boolean DEFAULT_NM_CPU_RESOURCE_ENABLED = false;
 
   /**
    * Prefix for disk configurations. Work in progress: This configuration
@@ -1581,6 +1602,7 @@ public class YarnConfiguration extends Configuration {
   public static final String TIMELINE_SERVICE_VERSION = TIMELINE_SERVICE_PREFIX
       + "version";
   public static final float DEFAULT_TIMELINE_SERVICE_VERSION = 1.0f;
+
   /**
    * Comma seperated list of names for UIs hosted in the timeline server
    * (For pluggable UIs).
@@ -1616,16 +1638,69 @@ public class YarnConfiguration extends Configuration {
       TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_ACTIVE_DIR_DEFAULT =
       "/tmp/entity-file-history/active";
 
+  public static final String TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_DONE_DIR =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "done-dir";
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_DONE_DIR_DEFAULT =
+      "/tmp/entity-file-history/done";
+
+  public static final String TIMELINE_SERVICE_ENTITY_GROUP_PLUGIN_CLASSES =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "group-id-plugin-classes";
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SUMMARY_STORE =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "summary-store";
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SUMMARY_ENTITY_TYPES =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "summary-entity-types";
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SCAN_INTERVAL_SECONDS =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "scan-interval-seconds";
+  public static final long
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SCAN_INTERVAL_SECONDS_DEFAULT = 60;
+
+  public static final String TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_THREADS =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "threads";
+  public static final int
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_THREADS_DEFAULT = 16;
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_APP_CACHE_SIZE
+      = TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "app-cache-size";
+  public static final int
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_APP_CACHE_SIZE_DEFAULT = 10;
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_CLEANER_INTERVAL_SECONDS =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "cleaner-interval-seconds";
+  public static final int
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_CLEANER_INTERVAL_SECONDS_DEFAULT =
+        60 * 60;
+
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_RETAIN_SECONDS
+      = TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "retain-seconds";
+  public static final int
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_RETAIN_SECONDS_DEFAULT =
+        7 * 24 * 60 * 60;
+
+  // how old the most recent log of an UNKNOWN app needs to be in the active
+  // directory before we treat it as COMPLETED
+  public static final String
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_UNKNOWN_ACTIVE_SECONDS =
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "unknown-active-seconds";
+  public static final int
+      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_UNKNOWN_ACTIVE_SECONDS_DEFAULT
+      = 24 * 60 * 60;
+
   public static final String
       TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_RETRY_POLICY_SPEC =
       TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "retry-policy-spec";
   public static final String
       DEFAULT_TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_RETRY_POLICY_SPEC =
       "2000, 500";
-
-  public static final String
-      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SUMMARY_ENTITY_TYPES =
-      TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_PREFIX + "summary-entity-types";
 
   public static final String TIMELINE_SERVICE_CLIENT_FD_FLUSH_INTERVAL_SECS =
       TIMELINE_SERVICE_CLIENT_PREFIX + "fd-flush-interval-secs";

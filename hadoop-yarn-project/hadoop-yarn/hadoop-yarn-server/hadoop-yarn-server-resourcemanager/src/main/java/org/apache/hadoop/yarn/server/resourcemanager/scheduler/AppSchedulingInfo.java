@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,7 +57,7 @@ import org.apache.hadoop.yarn.util.resource.Resources;
 public class AppSchedulingInfo {
   
   private static final Log LOG = LogFactory.getLog(AppSchedulingInfo.class);
-  private static final Comparator COMPARATOR =
+  private static final Comparator<Priority> COMPARATOR =
       new org.apache.hadoop.yarn.server.resourcemanager.resource.Priority.Comparator();
   private static final int EPOCH_BIT_SHIFT = 40;
 
@@ -69,7 +70,7 @@ public class AppSchedulingInfo {
   private ActiveUsersManager activeUsersManager;
   private boolean pending = true; // whether accepted/allocated by scheduler
   private ResourceUsage appResourceUsage;
-
+  private AtomicBoolean userBlacklistChanged = new AtomicBoolean(false);
   private final Set<String> amBlacklist = new HashSet<>();
   private Set<String> userBlacklist = new HashSet<>();
 
@@ -288,12 +289,15 @@ public class AppSchedulingInfo {
    * application, by asking for more resources and releasing resources acquired
    * by the application.
    *
-   * @param requests resources to be acquired
-   * @param recoverPreemptedRequest recover ResourceRequest on preemption
+   * @param requests
+   *          resources to be acquired
+   * @param recoverPreemptedRequestForAContainer
+   *          recover ResourceRequest on preemption
    * @return true if any resource was updated, false otherwise
    */
   public synchronized boolean updateResourceRequests(
-      List<ResourceRequest> requests, boolean recoverPreemptedRequest) {
+      List<ResourceRequest> requests,
+      boolean recoverPreemptedRequestForAContainer) {
     // Flag to track if any incoming requests update "ANY" requests
     boolean anyResourcesUpdated = false;
 
@@ -314,7 +318,7 @@ public class AppSchedulingInfo {
 
       // Increment number of containers if recovering preempted resources
       ResourceRequest lastRequest = asks.get(resourceName);
-      if (recoverPreemptedRequest && lastRequest != null) {
+      if (recoverPreemptedRequestForAContainer && lastRequest != null) {
         request.setNumContainers(lastRequest.getNumContainers() + 1);
       }
 
@@ -424,10 +428,12 @@ public class AppSchedulingInfo {
    * @param blacklistAdditions resources to be added to the userBlacklist
    * @param blacklistRemovals resources to be removed from the userBlacklist
    */
-   public void updateBlacklist(
+  public void updateBlacklist(
       List<String> blacklistAdditions, List<String> blacklistRemovals) {
-     updateUserOrAMBlacklist(userBlacklist, blacklistAdditions,
-         blacklistRemovals);
+    if (updateUserOrAMBlacklist(userBlacklist, blacklistAdditions,
+        blacklistRemovals)) {
+      userBlacklistChanged.set(true);
+    }
   }
 
   /**
@@ -441,17 +447,25 @@ public class AppSchedulingInfo {
         blacklistRemovals);
   }
 
-  void updateUserOrAMBlacklist(Set<String> blacklist,
+  boolean updateUserOrAMBlacklist(Set<String> blacklist,
       List<String> blacklistAdditions, List<String> blacklistRemovals) {
+    boolean changed = false;
     synchronized (blacklist) {
       if (blacklistAdditions != null) {
-        blacklist.addAll(blacklistAdditions);
+        changed = blacklist.addAll(blacklistAdditions);
       }
 
       if (blacklistRemovals != null) {
-        blacklist.removeAll(blacklistRemovals);
+        if (blacklist.removeAll(blacklistRemovals)) {
+          changed = true;
+        }
       }
     }
+    return changed;
+  }
+
+  public boolean getAndResetBlacklistChanged() {
+    return userBlacklistChanged.getAndSet(false);
   }
 
   public synchronized Collection<Priority> getPriorities() {
@@ -515,8 +529,8 @@ public class AppSchedulingInfo {
     }
     
     // Set queue metrics
-    queue.getMetrics().allocateResources(user, 0,
-        increaseRequest.getDeltaCapacity(), true);
+    queue.getMetrics().allocateResources(user,
+        increaseRequest.getDeltaCapacity());
     
     // remove the increase request from pending increase request map
     removeIncreaseRequest(nodeId, priority, containerId);
@@ -539,7 +553,7 @@ public class AppSchedulingInfo {
     }
     
     // Set queue metrics
-    queue.getMetrics().releaseResources(user, 0, absDelta);
+    queue.getMetrics().releaseResources(user, absDelta);
 
     // update usage
     appResourceUsage.decUsed(decreaseRequest.getNodePartition(), absDelta);

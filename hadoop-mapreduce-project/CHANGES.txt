@@ -468,6 +468,9 @@ Release 2.8.0 - UNRELEASED
     MAPREDUCE-6394. Speed up Task processing loop in HsTasksBlock#render()
     (Ray Chiang via jlowe)
 
+    MAPREDUCE-6473. Job submission can take a long time during Cluster
+    initialization (Kuhu Shukla via jlowe)
+
   BUG FIXES
 
     MAPREDUCE-6314. TestPipeApplication fails on trunk.
@@ -671,17 +674,32 @@ Release 2.8.0 - UNRELEASED
     MAPREDUCE-6557. Tests in mapreduce-client-app are writing outside of
     target. (Akira AJISAKA via junping_du)
 
-    MAPREDUCE-6549. multibyte delimiters with LineRecordReader cause
-    duplicate records (wilfreds via rkanter)
-
     MAPREDUCE-6550. archive-logs tool changes log ownership to the Yarn
     user when using DefaultContainerExecutor (rkanter)
 
-   MAPREDUCE-6419. JobHistoryServer doesn't sort properly based on Job ID when Job id's 
-   exceed 9999. (Mohammad Shahid Khan via rohithsharmaks)
+    MAPREDUCE-6419. JobHistoryServer doesn't sort properly based on Job ID when Job id's 
+    exceed 9999. (Mohammad Shahid Khan via rohithsharmaks)
 
     MAPREDUCE-6589. TestTaskLog outputs a log under directory other than
     target/test-dir. (aajisaka)
+
+    MAPREDUCE-6593. TestJobHistoryEventHandler.testTimelineEventHandling fails
+    on trunk because of NPE. (Naganarasimha G R via aajisaka)
+
+    MAPREDUCE-6068. Illegal progress value warnings in map tasks. (Binglin Chang
+    via junping_du)
+
+    MAPREDUCE-6601. Fix typo in Job#setUseNewAPI. (Kai Sasaki via aajisaka)
+
+    MAPREDUCE-6605. Fix typos mapreduce.map.skip.proc.count.autoincr and
+    mapreduce.reduce.skip.proc.count.autoincr in mapred-default.xml.
+    (Kai Sasaki via aajisaka)
+
+    MAPREDUCE-6614. Remove unnecessary code in TestMapreduceConfigFields.
+    (Kai Sasaki via aajisaka)
+
+    MAPREDUCE-6610. JobHistoryEventHandler should not swallow timeline response
+    (Li Lu via jianhe)
 
 Release 2.7.3 - UNRELEASED
 
@@ -701,13 +719,13 @@ Release 2.7.3 - UNRELEASED
     MAPREDUCE-5883. "Total megabyte-seconds" in job counters is slightly
     misleading (Nathan Roberts via jlowe)
 
-    MAPREDUCE-6549. multibyte delimiters with LineRecordReader cause
-    duplicate records (wilfreds via rkanter)
-
     MAPREDUCE-6583. Clarify confusing sentence in MapReduce tutorial document.
     (Kai Sasaki via aajisaka)
 
-Release 2.7.2 - UNRELEASED
+    MAPREDUCE-6554. MRAppMaster servicestart failing with NPE in
+    MRAppMaster#parsePreviousJobHistory (Bibin A Chundatt via jlowe)
+
+Release 2.7.2 - 2016-01-25
 
   INCOMPATIBLE CHANGES
 
@@ -990,13 +1008,29 @@ Release 2.6.4 - UNRELEASED
 
   IMPROVEMENTS
 
-  MAPREDUCE-6436. JobHistory cache issue. (Kai Sasaki via zxu)
+    MAPREDUCE-6436. JobHistory cache issue. (Kai Sasaki via zxu)
 
   OPTIMIZATIONS
 
   BUG FIXES
 
-Release 2.6.3 - UNRELEASED
+    MAPREDUCE-6577. MR AM unable to load native library without
+    MR_AM_ADMIN_USER_ENV set (sjlee)
+
+    MAPREDUCE-5982. Task attempts that fail from the ASSIGNED state can
+    disappear (Chang Li via jlowe)
+
+    MAPREDUCE-6492. AsyncDispatcher exit with NPE on
+    TaskAttemptImpl#sendJHStartEventForAssignedFailTask (Bibin A Chundatt via
+    jlowe)
+
+    MAPREDUCE-6363. [NNBench] Lease mismatch error when running with multiple
+    mappers. (Vlad Sharanhovich and Bibin A Chundatt via aajisaka)
+
+    MAPREDUCE-6554. MRAppMaster servicestart failing with NPE in
+    MRAppMaster#parsePreviousJobHistory (Bibin A Chundatt via jlowe)
+
+Release 2.6.3 - 2015-12-17
 
   INCOMPATIBLE CHANGES
 
@@ -1029,7 +1063,7 @@ Release 2.6.3 - UNRELEASED
     MAPREDUCE-5883. "Total megabyte-seconds" in job counters is slightly
     misleading (Nathan Roberts via jlowe)
 
-    MAPREDUCE-6549. multibyte delimiters with LineRecordReader cause
+    MAPREDUCE-6549. multibyte delimiters with LineRecordReader cause 
     duplicate records (wilfreds via rkanter)
 
 Release 2.6.2 - 2015-10-28

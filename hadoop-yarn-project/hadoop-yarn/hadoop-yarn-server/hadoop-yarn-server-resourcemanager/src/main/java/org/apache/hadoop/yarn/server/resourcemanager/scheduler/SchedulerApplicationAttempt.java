@@ -109,6 +109,7 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
   private LogAggregationContext logAggregationContext;
 
   private volatile Priority appPriority = null;
+  private boolean isAttemptRecovering;
 
   protected ResourceUsage attemptResourceUsage = new ResourceUsage();
   private AtomicLong firstAllocationRequestSentTime = new AtomicLong(0);
@@ -321,7 +322,7 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
     return false;
   }
   
-  public synchronized void recoverResourceRequests(
+  public synchronized void recoverResourceRequestsForContainer(
       List<ResourceRequest> requests) {
     if (!isStopped) {
       appSchedulingInfo.updateResourceRequests(requests, true);
@@ -625,8 +626,10 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
 
   
   public synchronized void addSchedulingOpportunity(Priority priority) {
-    schedulingOpportunities.setCount(priority,
-        schedulingOpportunities.count(priority) + 1);
+    int count = schedulingOpportunities.count(priority);
+    if (count < Integer.MAX_VALUE) {
+      schedulingOpportunities.setCount(priority, count + 1);
+    }
   }
   
   public synchronized void subtractSchedulingOpportunity(Priority priority) {
@@ -659,6 +662,11 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
       long currentTimeMs) {
     lastScheduledContainer.put(priority, currentTimeMs);
     schedulingOpportunities.setCount(priority, 0);
+  }
+
+  @VisibleForTesting
+  void setSchedulingOpportunities(Priority priority, int count) {
+    schedulingOpportunities.setCount(priority, count);
   }
 
   synchronized AggregateAppResourceUsage getRunningAggregateAppResourceUsage() {
@@ -855,7 +863,7 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
   }
   
   @Override
-  public synchronized ResourceUsage getSchedulingResourceUsage() {
+  public ResourceUsage getSchedulingResourceUsage() {
     return attemptResourceUsage;
   }
   
@@ -958,6 +966,14 @@ public class SchedulerApplicationAttempt implements SchedulableEntity {
     // Give the specific information which might be applicable for the
     // respective scheduler
     // queue's resource usage for specific partition
+  }
+
+  public boolean isAttemptRecovering() {
+    return isAttemptRecovering;
+  }
+
+  protected void setAttemptRecovering(boolean isRecovering) {
+    this.isAttemptRecovering = isRecovering;
   }
 
   public static enum AMState {

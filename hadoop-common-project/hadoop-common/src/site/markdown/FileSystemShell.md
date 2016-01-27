@@ -170,11 +170,15 @@ Similar to get command, except that the destination is restricted to a local fil
 count
 -----
 
-Usage: `hadoop fs -count [-q] [-h] [-v] <paths> `
+Usage: `hadoop fs -count [-q] [-h] [-v] [-t [<storage type>]] [-u] <paths> `
 
-Count the number of directories, files and bytes under the paths that match the specified file pattern. The output columns with -count are: DIR\_COUNT, FILE\_COUNT, CONTENT\_SIZE, PATHNAME
+Count the number of directories, files and bytes under the paths that match the specified file pattern. Get the quota and the usage. The output columns with -count are: DIR\_COUNT, FILE\_COUNT, CONTENT\_SIZE, PATHNAME
 
 The output columns with -count -q are: QUOTA, REMAINING\_QUOTA, SPACE\_QUOTA, REMAINING\_SPACE\_QUOTA, DIR\_COUNT, FILE\_COUNT, CONTENT\_SIZE, PATHNAME
+
+The output columns with -count -u are: QUOTA, REMAINING\_QUOTA, SPACE\_QUOTA, REMAINING\_SPACE\_QUOTA
+
+The -t option shows the quota and usage for each storage type.
 
 The -h option shows sizes in human readable format.
 
@@ -186,6 +190,9 @@ Example:
 * `hadoop fs -count -q hdfs://nn1.example.com/file1`
 * `hadoop fs -count -q -h hdfs://nn1.example.com/file1`
 * `hadoop fs -count -q -h -v hdfs://nn1.example.com/file1`
+* `hadoop fs -count -u hdfs://nn1.example.com/file1`
+* `hadoop fs -count -u -h hdfs://nn1.example.com/file1`
+* `hadoop fs -count -u -h -v hdfs://nn1.example.com/file1`
 
 Exit Code:
 
@@ -251,6 +258,10 @@ Options:
 * The -s option will result in an aggregate summary of file lengths being displayed, rather than the individual files.
 * The -h option will format file sizes in a "human-readable" fashion (e.g 64.0m instead of 67108864)
 
+The du returns three columns with the following format:
+
+    size disk_space_consumed_with_all_replicas full_path_name
+
 Example:
 
 * `hadoop fs -du /user/hadoop/dir1 /user/hadoop/file1 hdfs://nn.example.com/user/hadoop/dir1`
@@ -276,7 +287,7 @@ from trash directory, and create new checkpoint.
 
 When checkpoint is created,
 recently deleted files in trash are moved under the checkpoint.
-Files in checkpoints older than `fs.trash.checkpoint.interval`
+Files in checkpoints older than `fs.trash.interval`
 will be permanently deleted on the next invocation of `-expunge` command.
 
 If the file system supports the feature,

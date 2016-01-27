@@ -292,12 +292,13 @@ public class ClientRMService extends AbstractService implements
    * @return
    */
   private boolean checkAccess(UserGroupInformation callerUGI, String owner,
-      ApplicationAccessType operationPerformed,
-      RMApp application) {
-    return applicationsACLsManager.checkAccess(callerUGI, operationPerformed,
-        owner, application.getApplicationId())
-        || queueACLsManager.checkAccess(callerUGI, QueueACL.ADMINISTER_QUEUE,
-            application.getQueue());
+      ApplicationAccessType operationPerformed, RMApp application) {
+    return applicationsACLsManager
+        .checkAccess(callerUGI, operationPerformed, owner,
+            application.getApplicationId()) || queueACLsManager
+        .checkAccess(callerUGI, QueueACL.ADMINISTER_QUEUE,
+            application.getQueue(), application.getApplicationId(),
+            application.getName());
   }
 
   ApplicationId getNewApplicationId() {
@@ -438,7 +439,7 @@ public class ClientRMService extends AbstractService implements
       response = GetApplicationAttemptsResponse.newInstance(listAttempts);
     } else {
       throw new YarnException("User " + callerUGI.getShortUserName()
-          + " does not have privilage to see this aplication " + appId);
+          + " does not have privilage to see this application " + appId);
     }
     return response;
   }
@@ -489,7 +490,7 @@ public class ClientRMService extends AbstractService implements
           .createContainerReport());
     } else {
       throw new YarnException("User " + callerUGI.getShortUserName()
-          + " does not have privilage to see this aplication " + appId);
+          + " does not have privilage to see this application " + appId);
     }
     return response;
   }
@@ -542,7 +543,7 @@ public class ClientRMService extends AbstractService implements
       response = GetContainersResponse.newInstance(listContainers);
     } else {
       throw new YarnException("User " + callerUGI.getShortUserName()
-          + " does not have privilage to see this aplication " + appId);
+          + " does not have privilage to see this application " + appId);
     }
     return response;
   }
@@ -1386,7 +1387,7 @@ public class ClientRMService extends AbstractService implements
     }
     // Check if user has access on the managed queue
     if (!queueACLsManager.checkAccess(callerUGI, QueueACL.SUBMIT_APPLICATIONS,
-        queueName)) {
+        queueName, null, null)) {
       RMAuditLogger.logFailure(
           callerUGI.getShortUserName(),
           auditConstant,
