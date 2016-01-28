@@ -21,6 +21,7 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.io.erasurecode.coder.ErasureCoder;
+import org.apache.hadoop.io.erasurecode.coder.HHXORErasureEncoder;
 import org.apache.hadoop.io.erasurecode.coder.RSErasureEncoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RSRawDecoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RSRawEncoder;
@@ -160,6 +161,10 @@ public final class CodecUtil {
    */
   public static ErasureCoder createErasureEncoder(Configuration conf,
       int numDataUnits, int numParityUnits) {
+    if (conf.get(
+        CommonConfigurationKeys.IO_COMPRESSION_CODECS_KEY, "").equals("hh")) {
+      return new HHXORErasureEncoder(numDataUnits, numParityUnits);
+    }
     return new RSErasureEncoder(numDataUnits, numParityUnits);
   }
 }
