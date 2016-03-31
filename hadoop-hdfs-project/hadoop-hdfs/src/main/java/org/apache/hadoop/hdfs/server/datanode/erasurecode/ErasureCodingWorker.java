@@ -118,8 +118,10 @@ public final class ErasureCodingWorker {
         DFSConfigKeys.DFS_DN_EC_RECONSTRUCTION_STRIPED_BLK_THREADS_DEFAULT));
   }
   
-  private RawErasureDecoder newDecoder(int numDataUnits, int numParityUnits) {
-    return CodecUtil.createRSRawDecoder(conf, numDataUnits, numParityUnits);
+  private RawErasureDecoder newDecoder(int numDataUnits, int numParityUnits,
+      String codec) {
+    return CodecUtil.createRSRawDecoder(conf, numDataUnits,
+        numParityUnits, codec);
   }
 
   private void initializeStripedReadThreadPool(int num) {
@@ -248,6 +250,7 @@ public final class ErasureCodingWorker {
     private final int dataBlkNum;
     private final int parityBlkNum;
     private final int cellSize;
+    private final String codec;
     
     private RawErasureDecoder decoder;
 
@@ -305,6 +308,7 @@ public final class ErasureCodingWorker {
       dataBlkNum = ecPolicy.getNumDataUnits();
       parityBlkNum = ecPolicy.getNumParityUnits();
       cellSize = ecPolicy.getCellSize();
+      codec = ecPolicy.getSchema().getCodecName();
 
       blockGroup = reconstructionInfo.getExtendedBlock();
       final int cellsNum = (int)((blockGroup.getNumBytes() - 1) / cellSize + 1);
@@ -652,7 +656,7 @@ public final class ErasureCodingWorker {
     // Initialize decoder
     private void initDecoderIfNecessary() {
       if (decoder == null) {
-        decoder = newDecoder(dataBlkNum, parityBlkNum);
+        decoder = newDecoder(dataBlkNum, parityBlkNum, codec);
       }
     }
 

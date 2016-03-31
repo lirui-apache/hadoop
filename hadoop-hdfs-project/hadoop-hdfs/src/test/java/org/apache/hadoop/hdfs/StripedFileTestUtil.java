@@ -500,7 +500,8 @@ public class StripedFileTestUtil {
       }
     }
     final RawErasureEncoder encoder =
-        CodecUtil.createRSRawEncoder(conf, dataBytes.length, parityBytes.length);
+        CodecUtil.createRSRawEncoder(conf, dataBytes.length, parityBytes.length,
+            TEST_EC_POLICY.getSchema().getCodecName());
     encoder.encode(dataBytes, expectedParityBytes);
     for (int i = 0; i < parityBytes.length; i++) {
       if (checkSet.contains(i + dataBytes.length)){

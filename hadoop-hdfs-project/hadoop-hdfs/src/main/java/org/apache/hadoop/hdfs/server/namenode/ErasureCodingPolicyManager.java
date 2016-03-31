@@ -44,10 +44,13 @@ public final class ErasureCodingPolicyManager {
   private static final ErasureCodingPolicy SYS_POLICY2 =
       new ErasureCodingPolicy(HdfsConstants.RS_3_2_SCHEMA, DEFAULT_CELLSIZE,
           HdfsConstants.RS_3_2_POLICY_ID);
+  private static final ErasureCodingPolicy SYS_POLICY3 =
+      new ErasureCodingPolicy(HdfsConstants.RS_6_3_LEGACY_SCHEMA,
+          DEFAULT_CELLSIZE, HdfsConstants.RS_6_3_LEGACY_POLICY_ID);
 
   //We may add more later.
   private static final ErasureCodingPolicy[] SYS_POLICIES =
-      new ErasureCodingPolicy[]{SYS_POLICY1, SYS_POLICY2};
+      new ErasureCodingPolicy[]{SYS_POLICY1, SYS_POLICY2, SYS_POLICY3};
 
   /**
    * All active policies maintained in NN memory for fast querying,
