@@ -20,14 +20,10 @@ package org.apache.hadoop.io.erasurecode;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
-import org.apache.hadoop.io.erasurecode.rawcoder.RSRawDecoder;
-import org.apache.hadoop.io.erasurecode.rawcoder.RSRawEncoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureCoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureCoderFactory;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureDecoder;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
-import org.apache.hadoop.io.erasurecode.rawcoder.XORRawDecoder;
-import org.apache.hadoop.io.erasurecode.rawcoder.XORRawEncoder;
 
 /**
  * A codec & coder utility to help create raw coders conveniently.
@@ -158,23 +154,27 @@ public final class CodecUtil {
 
   private static String getFactNameFromCodec(Configuration conf, String codec) {
     switch (codec) {
-      case RS_DEFAULT_CODEC_NAME:
-        return conf != null ? conf.get(
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_KEY,
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT) :
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT;
-      case RS_LEGACY_CODEC_NAME:
-        return conf != null ? conf.get(
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_KEY,
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT) :
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT;
-      case XOR_CODEC_NAME:
-        return conf != null ? conf.get(
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_KEY,
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT) :
-            CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT;
-      default:
-        throw new IllegalArgumentException("Unknown codec name: " + codec);
+    case RS_DEFAULT_CODEC_NAME:
+      return conf != null ? conf.get(
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_KEY,
+          CommonConfigurationKeys.
+              IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT) :
+          CommonConfigurationKeys.
+              IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT;
+    case RS_LEGACY_CODEC_NAME:
+      return conf != null ? conf.get(
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_KEY,
+          CommonConfigurationKeys.
+              IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT) :
+          CommonConfigurationKeys.
+              IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT;
+    case XOR_CODEC_NAME:
+      return conf != null ? conf.get(
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_KEY,
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT) :
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT;
+    default:
+      throw new IllegalArgumentException("Unknown codec name: " + codec);
     }
   }
 }
