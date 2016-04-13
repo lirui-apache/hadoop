@@ -287,7 +287,7 @@ public class DFSStripedOutputStream extends DFSOutputStream {
         ExecutorCompletionService<>(flushAllExecutor);
 
     encoder = CodecUtil.createRSRawEncoder(dfsClient.getConfiguration(),
-        numDataBlocks, numParityBlocks, ecPolicy.getSchema().getCodecName());
+        numDataBlocks, numParityBlocks, ecPolicy.getCodecName());
 
     coordinator = new Coordinator(numAllBlocks);
     try {

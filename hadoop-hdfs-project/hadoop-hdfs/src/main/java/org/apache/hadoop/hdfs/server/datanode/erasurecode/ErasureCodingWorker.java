@@ -308,7 +308,7 @@ public final class ErasureCodingWorker {
       dataBlkNum = ecPolicy.getNumDataUnits();
       parityBlkNum = ecPolicy.getNumParityUnits();
       cellSize = ecPolicy.getCellSize();
-      codec = ecPolicy.getSchema().getCodecName();
+      codec = ecPolicy.getCodecName();
 
       blockGroup = reconstructionInfo.getExtendedBlock();
       final int cellsNum = (int)((blockGroup.getNumBytes() - 1) / cellSize + 1);
