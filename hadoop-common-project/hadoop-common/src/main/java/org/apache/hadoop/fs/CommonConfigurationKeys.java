@@ -21,6 +21,7 @@ package org.apache.hadoop.fs;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.http.lib.StaticUserWebFilter;
+import org.apache.hadoop.io.erasurecode.CodecUtil;
 import org.apache.hadoop.io.erasurecode.rawcoder.RSRawErasureCoderFactory;
 import org.apache.hadoop.io.erasurecode.rawcoder.RSRawErasureCoderFactoryLegacy;
 import org.apache.hadoop.io.erasurecode.rawcoder.XORRawErasureCoderFactory;
@@ -161,21 +162,25 @@ public class CommonConfigurationKeys extends CommonConfigurationKeysPublic {
 
   /** Raw coder factory for the RS default codec. */
   public static final String IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_KEY =
-      "io.erasurecode.codec.rs-default.rawcoder";
+      getRawCoderKey(CodecUtil.RS_DEFAULT_CODEC_NAME);
   public static final String IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT =
       RSRawErasureCoderFactory.class.getCanonicalName();
 
   /** Raw coder factory for the RS legacy codec. */
   public static final String IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_KEY =
-      "io.erasurecode.codec.rs-legacy.rawcoder";
+      getRawCoderKey(CodecUtil.RS_LEGACY_CODEC_NAME);
   public static final String IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT =
       RSRawErasureCoderFactoryLegacy.class.getCanonicalName();
 
   /** Raw coder factory for the XOR codec. */
   public static final String IO_ERASURECODE_CODEC_XOR_RAWCODER_KEY =
-      "io.erasurecode.codec.xor.rawcoder";
+      getRawCoderKey(CodecUtil.XOR_CODEC_NAME);
   public static final String IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT =
       XORRawErasureCoderFactory.class.getCanonicalName();
+
+  public static String getRawCoderKey(String codecName) {
+    return "io.erasurecode.codec." + codecName + ".rawcoder";
+  }
 
   /**
    * Service Authorization

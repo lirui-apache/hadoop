@@ -48,7 +48,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createRSRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
-    assert conf != null;
+    Preconditions.checkArgument(conf != null);
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -75,7 +75,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createRSRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
-    assert conf != null;
+    Preconditions.checkArgument(conf != null);
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -101,7 +101,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createXORRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
-    assert conf != null;
+    Preconditions.checkArgument(conf != null);
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         true, numDataUnits, numParityUnits);
@@ -117,7 +117,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createXORRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
-    assert conf != null;
+    Preconditions.checkArgument(conf != null);
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         false, numDataUnits, numParityUnits);
@@ -139,14 +139,8 @@ public final class CodecUtil {
 
     RawErasureCoderFactory fact;
     try {
-      Class<? extends RawErasureCoderFactory> factClass;
-      if (conf != null) {
-        factClass = conf.getClassByName(
-            rawCoderFactory).asSubclass(RawErasureCoderFactory.class);
-      } else {
-        factClass = Class.forName(rawCoderFactory).asSubclass(
-            RawErasureCoderFactory.class);
-      }
+      Class<? extends RawErasureCoderFactory> factClass = conf.getClassByName(
+          rawCoderFactory).asSubclass(RawErasureCoderFactory.class);
       fact = factClass.newInstance();
     } catch (ClassNotFoundException | InstantiationException |
         IllegalAccessException e) {
@@ -160,26 +154,27 @@ public final class CodecUtil {
   private static String getFactNameFromCodec(Configuration conf, String codec) {
     switch (codec) {
     case RS_DEFAULT_CODEC_NAME:
-      return conf != null ? conf.get(
+      return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_KEY,
           CommonConfigurationKeys.
-              IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT) :
-          CommonConfigurationKeys.
-              IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT;
+              IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT);
     case RS_LEGACY_CODEC_NAME:
-      return conf != null ? conf.get(
+      return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_KEY,
           CommonConfigurationKeys.
-              IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT) :
-          CommonConfigurationKeys.
-              IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT;
+              IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT);
     case XOR_CODEC_NAME:
-      return conf != null ? conf.get(
+      return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_KEY,
-          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT) :
-          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT;
+          CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT);
     default:
-      throw new IllegalArgumentException("Unknown codec name: " + codec);
+      // For custom codec, we throw exception if the factory is not configured
+      String factName = conf.get(CommonConfigurationKeys.getRawCoderKey(codec));
+      if (factName == null) {
+        throw new IllegalArgumentException("Raw coder factory not configured " +
+            "for custom codec " + codec);
+      }
+      return factName;
     }
   }
 }
