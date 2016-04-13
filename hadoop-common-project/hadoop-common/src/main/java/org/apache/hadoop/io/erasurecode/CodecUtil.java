@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.io.erasurecode;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
@@ -47,6 +48,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createRSRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
+    assert conf != null;
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -73,6 +75,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createRSRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
+    assert conf != null;
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -98,6 +101,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createXORRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
+    assert conf != null;
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         true, numDataUnits, numParityUnits);
@@ -113,6 +117,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createXORRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
+    assert conf != null;
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         false, numDataUnits, numParityUnits);
