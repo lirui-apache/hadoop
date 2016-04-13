@@ -48,7 +48,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createRSRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
-    Preconditions.checkArgument(conf != null);
+    Preconditions.checkNotNull(conf);
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -75,7 +75,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createRSRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
-    Preconditions.checkArgument(conf != null);
+    Preconditions.checkNotNull(conf);
     if (codec == null) {
       codec = RS_DEFAULT_CODEC_NAME;
     }
@@ -101,7 +101,7 @@ public final class CodecUtil {
    */
   public static RawErasureEncoder createXORRawEncoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
-    Preconditions.checkArgument(conf != null);
+    Preconditions.checkNotNull(conf);
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         true, numDataUnits, numParityUnits);
@@ -117,7 +117,7 @@ public final class CodecUtil {
    */
   public static RawErasureDecoder createXORRawDecoder(
       Configuration conf, int numDataUnits, int numParityUnits) {
-    Preconditions.checkArgument(conf != null);
+    Preconditions.checkNotNull(conf);
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, XOR_CODEC_NAME),
         false, numDataUnits, numParityUnits);
@@ -169,7 +169,8 @@ public final class CodecUtil {
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT);
     default:
       // For custom codec, we throw exception if the factory is not configured
-      String factName = conf.get(CommonConfigurationKeys.getRawCoderKey(codec));
+      String rawCoderKey = "io.erasurecode.codec." + codec + ".rawcoder";
+      String factName = conf.get(rawCoderKey);
       if (factName == null) {
         throw new IllegalArgumentException("Raw coder factory not configured " +
             "for custom codec " + codec);
