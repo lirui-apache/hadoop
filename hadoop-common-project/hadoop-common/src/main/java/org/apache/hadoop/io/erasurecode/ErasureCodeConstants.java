@@ -28,13 +28,10 @@ public final class ErasureCodeConstants {
 
   public static final ECSchema RS_6_3_SCHEMA = new ECSchema(
       RS_DEFAULT_CODEC_NAME, 6, 3);
-  public static final byte RS_6_3_POLICY_ID = 0;
 
   public static final ECSchema RS_3_2_SCHEMA = new ECSchema(
       RS_DEFAULT_CODEC_NAME, 3, 2);
-  public static final byte RS_3_2_POLICY_ID = 1;
 
   public static final ECSchema RS_6_3_LEGACY_SCHEMA = new ECSchema(
       RS_LEGACY_CODEC_NAME, 6, 3);
-  public static final byte RS_6_3_LEGACY_POLICY_ID = 2;
 }
