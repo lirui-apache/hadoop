@@ -32,10 +32,6 @@ import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
 @InterfaceAudience.Private
 public final class CodecUtil {
 
-  public static final String RS_DEFAULT_CODEC_NAME = "rs-default";
-  public static final String RS_LEGACY_CODEC_NAME = "rs-legacy";
-  public static final String XOR_CODEC_NAME = "xor";
-
   private CodecUtil() { }
 
   /**
@@ -50,7 +46,7 @@ public final class CodecUtil {
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
     Preconditions.checkNotNull(conf);
     if (codec == null) {
-      codec = RS_DEFAULT_CODEC_NAME;
+      codec = ErasureCodeConstants.RS_DEFAULT_CODEC_NAME;
     }
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, codec), true, numDataUnits, numParityUnits);
@@ -77,7 +73,7 @@ public final class CodecUtil {
       Configuration conf, int numDataUnits, int numParityUnits, String codec) {
     Preconditions.checkNotNull(conf);
     if (codec == null) {
-      codec = RS_DEFAULT_CODEC_NAME;
+      codec = ErasureCodeConstants.RS_DEFAULT_CODEC_NAME;
     }
     RawErasureCoder rawCoder = createRawCoder(conf,
         getFactNameFromCodec(conf, codec), false, numDataUnits, numParityUnits);
@@ -103,7 +99,7 @@ public final class CodecUtil {
       Configuration conf, int numDataUnits, int numParityUnits) {
     Preconditions.checkNotNull(conf);
     RawErasureCoder rawCoder = createRawCoder(conf,
-        getFactNameFromCodec(conf, XOR_CODEC_NAME),
+        getFactNameFromCodec(conf, ErasureCodeConstants.XOR_CODEC_NAME),
         true, numDataUnits, numParityUnits);
     return (RawErasureEncoder) rawCoder;
   }
@@ -119,7 +115,7 @@ public final class CodecUtil {
       Configuration conf, int numDataUnits, int numParityUnits) {
     Preconditions.checkNotNull(conf);
     RawErasureCoder rawCoder = createRawCoder(conf,
-        getFactNameFromCodec(conf, XOR_CODEC_NAME),
+        getFactNameFromCodec(conf, ErasureCodeConstants.XOR_CODEC_NAME),
         false, numDataUnits, numParityUnits);
     return (RawErasureDecoder) rawCoder;
   }
@@ -153,17 +149,17 @@ public final class CodecUtil {
 
   private static String getFactNameFromCodec(Configuration conf, String codec) {
     switch (codec) {
-    case RS_DEFAULT_CODEC_NAME:
+    case ErasureCodeConstants.RS_DEFAULT_CODEC_NAME:
       return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_KEY,
           CommonConfigurationKeys.
               IO_ERASURECODE_CODEC_RS_DEFAULT_RAWCODER_DEFAULT);
-    case RS_LEGACY_CODEC_NAME:
+    case ErasureCodeConstants.RS_LEGACY_CODEC_NAME:
       return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_KEY,
           CommonConfigurationKeys.
               IO_ERASURECODE_CODEC_RS_LEGACY_RAWCODER_DEFAULT);
-    case XOR_CODEC_NAME:
+    case ErasureCodeConstants.XOR_CODEC_NAME:
       return conf.get(
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_KEY,
           CommonConfigurationKeys.IO_ERASURECODE_CODEC_XOR_RAWCODER_DEFAULT);

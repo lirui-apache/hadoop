@@ -19,7 +19,7 @@ package org.apache.hadoop.hdfs.server.namenode;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicy;
-import org.apache.hadoop.hdfs.protocol.HdfsConstants;
+import org.apache.hadoop.io.erasurecode.ErasureCodeConstants;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -39,14 +39,14 @@ public final class ErasureCodingPolicyManager {
    */
   private static final int DEFAULT_CELLSIZE = 64 * 1024;
   private static final ErasureCodingPolicy SYS_POLICY1 =
-      new ErasureCodingPolicy(HdfsConstants.RS_6_3_SCHEMA, DEFAULT_CELLSIZE,
-          HdfsConstants.RS_6_3_POLICY_ID);
+      new ErasureCodingPolicy(ErasureCodeConstants.RS_6_3_SCHEMA,
+          DEFAULT_CELLSIZE, ErasureCodeConstants.RS_6_3_POLICY_ID);
   private static final ErasureCodingPolicy SYS_POLICY2 =
-      new ErasureCodingPolicy(HdfsConstants.RS_3_2_SCHEMA, DEFAULT_CELLSIZE,
-          HdfsConstants.RS_3_2_POLICY_ID);
+      new ErasureCodingPolicy(ErasureCodeConstants.RS_3_2_SCHEMA,
+          DEFAULT_CELLSIZE, ErasureCodeConstants.RS_3_2_POLICY_ID);
   private static final ErasureCodingPolicy SYS_POLICY3 =
-      new ErasureCodingPolicy(HdfsConstants.RS_6_3_LEGACY_SCHEMA,
-          DEFAULT_CELLSIZE, HdfsConstants.RS_6_3_LEGACY_POLICY_ID);
+      new ErasureCodingPolicy(ErasureCodeConstants.RS_6_3_LEGACY_SCHEMA,
+          DEFAULT_CELLSIZE, ErasureCodeConstants.RS_6_3_LEGACY_POLICY_ID);
 
   //We may add more later.
   private static final ErasureCodingPolicy[] SYS_POLICIES =
