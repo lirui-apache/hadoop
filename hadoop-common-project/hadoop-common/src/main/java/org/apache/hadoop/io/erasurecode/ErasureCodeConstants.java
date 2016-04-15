@@ -17,6 +17,9 @@
  */
 package org.apache.hadoop.io.erasurecode;
 
+/**
+ * Constants related to the erasure code feature.
+ */
 public final class ErasureCodeConstants {
 
   private ErasureCodeConstants(){
