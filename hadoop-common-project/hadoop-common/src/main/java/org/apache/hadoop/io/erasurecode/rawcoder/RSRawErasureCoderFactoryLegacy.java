@@ -26,12 +26,12 @@ import org.apache.hadoop.classification.InterfaceAudience;
 public class RSRawErasureCoderFactoryLegacy implements RawErasureCoderFactory {
 
   @Override
-  public RawErasureEncoder createEncoder(int numDataUnits, int numParityUnits) {
-    return new RSRawEncoderLegacy(numDataUnits, numParityUnits);
+  public RawErasureEncoder createEncoder(ErasureCoderOptions conf) {
+    return new RSRawEncoderLegacy(conf);
   }
 
   @Override
-  public RawErasureDecoder createDecoder(int numDataUnits, int numParityUnits) {
-    return new RSRawDecoderLegacy(numDataUnits, numParityUnits);
+  public RawErasureDecoder createDecoder(ErasureCoderOptions conf) {
+    return new RSRawDecoderLegacy(conf);
   }
 }

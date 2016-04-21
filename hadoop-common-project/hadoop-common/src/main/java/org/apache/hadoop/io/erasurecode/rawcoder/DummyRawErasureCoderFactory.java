@@ -24,13 +24,14 @@ import org.apache.hadoop.classification.InterfaceAudience;
  */
 @InterfaceAudience.Private
 public class DummyRawErasureCoderFactory implements RawErasureCoderFactory {
+
   @Override
-  public RawErasureEncoder createEncoder(int numDataUnits, int numParityUnits) {
-    return new DummyRawEncoder(numDataUnits, numParityUnits);
+  public RawErasureEncoder createEncoder(ErasureCoderOptions conf) {
+    return new DummyRawEncoder(conf);
   }
 
   @Override
-  public RawErasureDecoder createDecoder(int numDataUnits, int numParityUnits) {
-    return new DummyRawDecoder(numDataUnits, numParityUnits);
+  public RawErasureDecoder createDecoder(ErasureCoderOptions conf) {
+    return new DummyRawDecoder(conf);
   }
 }

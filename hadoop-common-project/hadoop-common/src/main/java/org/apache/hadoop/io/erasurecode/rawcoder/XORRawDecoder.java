@@ -17,9 +17,9 @@
  */
 package org.apache.hadoop.io.erasurecode.rawcoder;
 
-import java.nio.ByteBuffer;
-
 import org.apache.hadoop.classification.InterfaceAudience;
+
+import java.nio.ByteBuffer;
 
 /**
  * A raw decoder in XOR code scheme in pure Java, adapted from HDFS-RAID.
@@ -29,15 +29,16 @@ import org.apache.hadoop.classification.InterfaceAudience;
  * deployed independently.
  */
 @InterfaceAudience.Private
-public class XORRawDecoder extends AbstractRawErasureDecoder {
+public class XORRawDecoder extends RawErasureDecoder {
 
-  public XORRawDecoder(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
+  public XORRawDecoder(ErasureCoderOptions conf) {
+    super(conf);
   }
 
   @Override
-  protected void doDecode(ByteBuffer[] inputs, int[] erasedIndexes,
-                          ByteBuffer[] outputs) {
+  protected void doDecode(DecodingState decodingState, ByteBuffer[] inputs,
+                          int[] erasedIndexes, ByteBuffer[] outputs) {
+    CoderUtil.resetOutputBuffers(outputs, decodingState.getDecodeLength());
     ByteBuffer output = outputs[0];
 
     int erasedIdx = erasedIndexes[0];
@@ -59,12 +60,12 @@ public class XORRawDecoder extends AbstractRawErasureDecoder {
   }
 
   @Override
-  protected void doDecode(byte[][] inputs, int[] inputOffsets, int dataLen,
-                          int[] erasedIndexes, byte[][] outputs,
-                          int[] outputOffsets) {
+  protected void doDecode(DecodingState decodingState, byte[][] inputs,
+                          int[] inputOffsets, int[] erasedIndexes,
+                          byte[][] outputs, int[] outputOffsets) {
     byte[] output = outputs[0];
-    resetBuffer(output, outputOffsets[0], dataLen);
-
+    int dataLen = decodingState.getDecodeLength();
+    CoderUtil.resetOutputBuffers(outputs, outputOffsets, dataLen);
     int erasedIdx = erasedIndexes[0];
 
     // Process the inputs.

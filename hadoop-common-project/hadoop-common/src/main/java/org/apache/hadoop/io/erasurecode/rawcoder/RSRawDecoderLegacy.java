@@ -19,7 +19,6 @@ package org.apache.hadoop.io.erasurecode.rawcoder;
 
 import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.io.erasurecode.rawcoder.util.CoderUtil;
 import org.apache.hadoop.io.erasurecode.rawcoder.util.RSUtil;
 
 import java.nio.ByteBuffer;
@@ -34,7 +33,7 @@ import java.nio.ByteBuffer;
  * addressed in HADOOP-11871.
  */
 @InterfaceAudience.Private
-public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
+public class RSRawDecoderLegacy extends RawErasureDecoder {
   // To describe and calculate the needed Vandermonde matrix
   private int[] errSignature;
   private int[] primitivePower;
@@ -61,16 +60,16 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
   private ByteBuffer[] adjustedDirectBufferOutputsParameter =
       new ByteBuffer[getNumParityUnits()];
 
-  public RSRawDecoderLegacy(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
-    if (numDataUnits + numParityUnits >= RSUtil.GF.getFieldSize()) {
+  public RSRawDecoderLegacy(ErasureCoderOptions conf) {
+    super(conf);
+    if (getNumAllUnits() >= RSUtil.GF.getFieldSize()) {
       throw new HadoopIllegalArgumentException(
               "Invalid numDataUnits and numParityUnits");
     }
 
-    this.errSignature = new int[numParityUnits];
-    this.primitivePower = RSUtil.getPrimitivePower(numDataUnits,
-        numParityUnits);
+    this.errSignature = new int[getNumParityUnits()];
+    this.primitivePower = RSUtil.getPrimitivePower(getNumDataUnits(),
+        getNumParityUnits());
   }
 
   @Override
@@ -129,9 +128,12 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
   }
 
   @Override
-  protected void doDecode(byte[][] inputs, int[] inputOffsets,
-                          int dataLen, int[] erasedIndexes,
+  protected void doDecode(DecodingState decodingState, byte[][] inputs,
+                          int[] inputOffsets, int[] erasedIndexes,
                           byte[][] outputs, int[] outputOffsets) {
+    int dataLen = decodingState.getDecodeLength();
+    CoderUtil.resetOutputBuffers(outputs, outputOffsets, dataLen);
+
     /**
      * As passed parameters are friendly to callers but not to the underlying
      * implementations, so we have to adjust them before calling doDecodeImpl.
@@ -155,7 +157,7 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
         // we use the passed output buffer to avoid copying data thereafter.
         if (erasedIndexes[i] == erasedOrNotToReadIndexes[j]) {
           found = true;
-          adjustedByteArrayOutputsParameter[j] = resetBuffer(
+          adjustedByteArrayOutputsParameter[j] = CoderUtil.resetBuffer(
                   outputs[outputIdx], outputOffsets[outputIdx], dataLen);
           adjustedOutputOffsets[j] = outputOffsets[outputIdx];
           outputIdx++;
@@ -169,7 +171,7 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
     // Use shared buffers for other positions (not set yet)
     for (int bufferIdx = 0, i = 0; i < erasedOrNotToReadIndexes.length; i++) {
       if (adjustedByteArrayOutputsParameter[i] == null) {
-        adjustedByteArrayOutputsParameter[i] = resetBuffer(
+        adjustedByteArrayOutputsParameter[i] = CoderUtil.resetBuffer(
             checkGetBytesArrayBuffer(bufferIdx, dataLen), 0, dataLen);
         adjustedOutputOffsets[i] = 0; // Always 0 for such temp output
         bufferIdx++;
@@ -181,10 +183,10 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
   }
 
   @Override
-  protected void doDecode(ByteBuffer[] inputs, int[] erasedIndexes,
-                          ByteBuffer[] outputs) {
-    ByteBuffer validInput = CoderUtil.findFirstValidInput(inputs);
-    int dataLen = validInput.remaining();
+  protected void doDecode(DecodingState decodingState, ByteBuffer[] inputs,
+                          int[] erasedIndexes, ByteBuffer[] outputs) {
+    int dataLen = decodingState.getDecodeLength();
+    CoderUtil.resetOutputBuffers(outputs, dataLen);
 
     /**
      * As passed parameters are friendly to callers but not to the underlying
@@ -209,7 +211,7 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
         if (erasedIndexes[i] == erasedOrNotToReadIndexes[j]) {
           found = true;
           adjustedDirectBufferOutputsParameter[j] =
-              resetBuffer(outputs[outputIdx++], dataLen);
+              CoderUtil.resetBuffer(outputs[outputIdx++], dataLen);
         }
       }
       if (!found) {
@@ -223,7 +225,8 @@ public class RSRawDecoderLegacy extends AbstractRawErasureDecoder {
         ByteBuffer buffer = checkGetDirectBuffer(bufferIdx, dataLen);
         buffer.position(0);
         buffer.limit(dataLen);
-        adjustedDirectBufferOutputsParameter[i] = resetBuffer(buffer, dataLen);
+        adjustedDirectBufferOutputsParameter[i] =
+            CoderUtil.resetBuffer(buffer, dataLen);
         bufferIdx++;
       }
     }

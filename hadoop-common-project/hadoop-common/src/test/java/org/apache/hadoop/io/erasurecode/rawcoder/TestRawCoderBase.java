@@ -222,18 +222,16 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    * @return
    */
   protected RawErasureEncoder createEncoder() {
-    RawErasureEncoder encoder;
+    ErasureCoderOptions coderConf =
+        new ErasureCoderOptions(numDataUnits, numParityUnits);
+    coderConf.setCoderOption(CoderOption.ALLOW_VERBOSE_DUMP, isAllowDump());
     try {
       Constructor<? extends RawErasureEncoder> constructor =
-              (Constructor<? extends RawErasureEncoder>)
-                      encoderClass.getConstructor(int.class, int.class);
-      encoder = constructor.newInstance(numDataUnits, numParityUnits);
+          encoderClass.getConstructor(ErasureCoderOptions.class);
+      return constructor.newInstance(coderConf);
     } catch (Exception e) {
       throw new RuntimeException("Failed to create encoder", e);
     }
-
-    encoder.setConf(getConf());
-    return encoder;
   }
 
   /**
@@ -241,18 +239,16 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    * @return
    */
   protected RawErasureDecoder createDecoder() {
-    RawErasureDecoder decoder;
+    ErasureCoderOptions coderConf =
+        new ErasureCoderOptions(numDataUnits, numParityUnits);
+    coderConf.setCoderOption(CoderOption.ALLOW_VERBOSE_DUMP, isAllowDump());
     try {
       Constructor<? extends RawErasureDecoder> constructor =
-              (Constructor<? extends RawErasureDecoder>)
-                      decoderClass.getConstructor(int.class, int.class);
-      decoder = constructor.newInstance(numDataUnits, numParityUnits);
+          decoderClass.getConstructor(ErasureCoderOptions.class);
+      return constructor.newInstance(coderConf);
     } catch (Exception e) {
       throw new RuntimeException("Failed to create decoder", e);
     }
-
-    decoder.setConf(getConf());
-    return decoder;
   }
 
   /**

@@ -17,9 +17,9 @@
  */
 package org.apache.hadoop.io.erasurecode.rawcoder;
 
-import java.nio.ByteBuffer;
-
 import org.apache.hadoop.classification.InterfaceAudience;
+
+import java.nio.ByteBuffer;
 
 /**
  * A raw encoder in XOR code scheme in pure Java, adapted from HDFS-RAID.
@@ -29,13 +29,15 @@ import org.apache.hadoop.classification.InterfaceAudience;
  * deployed independently.
  */
 @InterfaceAudience.Private
-public class XORRawEncoder extends AbstractRawErasureEncoder {
+public class XORRawEncoder extends RawErasureEncoder {
 
-  public XORRawEncoder(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
+  public XORRawEncoder(ErasureCoderOptions conf) {
+    super(conf);
   }
 
-  protected void doEncode(ByteBuffer[] inputs, ByteBuffer[] outputs) {
+  protected void doEncode(EncodingState encodingState, ByteBuffer[] inputs,
+                          ByteBuffer[] outputs) {
+    CoderUtil.resetOutputBuffers(outputs, encodingState.getEncodeLength());
     ByteBuffer output = outputs[0];
 
     // Get the first buffer's data.
@@ -56,10 +58,12 @@ public class XORRawEncoder extends AbstractRawErasureEncoder {
   }
 
   @Override
-  protected void doEncode(byte[][] inputs, int[] inputOffsets, int dataLen,
-                          byte[][] outputs, int[] outputOffsets) {
+  protected void doEncode(EncodingState encodingState, byte[][] inputs,
+                          int[] inputOffsets, byte[][] outputs,
+                          int[] outputOffsets) {
+    int dataLen = encodingState.getEncodeLength();
+    CoderUtil.resetOutputBuffers(outputs, outputOffsets, dataLen);
     byte[] output = outputs[0];
-    resetBuffer(output, outputOffsets[0], dataLen);
 
     // Get the first buffer's data.
     int iIdx, oIdx;

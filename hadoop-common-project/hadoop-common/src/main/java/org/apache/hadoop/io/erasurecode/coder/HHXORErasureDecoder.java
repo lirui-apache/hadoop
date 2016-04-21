@@ -76,9 +76,10 @@ public class HHXORErasureDecoder extends AbstractErasureDecoder {
 
   private RawErasureEncoder checkCreateXorRawEncoder() {
     if (xorRawEncoder == null) {
+      ErasureCoderOptions erasureCoderOptions = new ErasureCoderOptions(
+          getNumDataUnits(), getNumParityUnits(), false, false);
       xorRawEncoder = CodecUtil.createXORRawEncoder(getConf(),
-              getNumDataUnits(), getNumParityUnits());
-      xorRawEncoder.setCoderOption(CoderOption.ALLOW_CHANGE_INPUTS, false);
+          erasureCoderOptions);
     }
     return xorRawEncoder;
   }

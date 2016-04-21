@@ -26,12 +26,12 @@ import org.apache.hadoop.classification.InterfaceAudience;
 public class XORRawErasureCoderFactory implements RawErasureCoderFactory {
 
   @Override
-  public RawErasureEncoder createEncoder(int numDataUnits, int numParityUnits) {
-    return new XORRawEncoder(numDataUnits, numParityUnits);
+  public RawErasureEncoder createEncoder(ErasureCoderOptions conf) {
+    return new XORRawEncoder(conf);
   }
 
   @Override
-  public RawErasureDecoder createDecoder(int numDataUnits, int numParityUnits) {
-    return new XORRawDecoder(numDataUnits, numParityUnits);
+  public RawErasureDecoder createDecoder(ErasureCoderOptions conf) {
+    return new XORRawDecoder(conf);
   }
 }

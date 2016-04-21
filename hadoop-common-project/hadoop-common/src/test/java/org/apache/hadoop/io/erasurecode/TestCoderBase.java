@@ -99,6 +99,10 @@ public abstract class TestCoderBase {
     this.allowDump = allowDump;
   }
 
+  protected boolean isAllowDump() {
+    return allowDump;
+  }
+
   /**
    * Prepare before running the case.
    * @param conf
@@ -502,7 +506,8 @@ public abstract class TestCoderBase {
       sb.append(" erasedParityIndexes=").
               append(Arrays.toString(erasedParityIndexes));
       sb.append(" usingDirectBuffer=").append(usingDirectBuffer);
-      sb.append(" isAllowingChangeInputs=").append(allowChangeInputs);
+      sb.append(" allowChangeInputs=").append(allowChangeInputs);
+      sb.append(" allowVerboseDump=").append(allowDump);
       sb.append("\n");
 
       System.out.println(sb.toString());

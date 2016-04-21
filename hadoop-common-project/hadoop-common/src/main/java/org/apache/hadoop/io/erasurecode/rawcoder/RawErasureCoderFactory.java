@@ -29,17 +29,15 @@ public interface RawErasureCoderFactory {
 
   /**
    * Create raw erasure encoder.
-   * @param numDataUnits number of data units in a coding group
-   * @param numParityUnits number of parity units in a coding group
+   * @param conf the configuration used to create the encoder
    * @return raw erasure encoder
    */
-  public RawErasureEncoder createEncoder(int numDataUnits, int numParityUnits);
+  RawErasureEncoder createEncoder(ErasureCoderOptions conf);
 
   /**
    * Create raw erasure decoder.
-   * @param numDataUnits number of data units in a coding group
-   * @param numParityUnits number of parity units in a coding group
+   * @param conf the configuration used to create the encoder
    * @return raw erasure decoder
    */
-  public RawErasureDecoder createDecoder(int numDataUnits, int numParityUnits);
+  RawErasureDecoder createDecoder(ErasureCoderOptions conf);
 }

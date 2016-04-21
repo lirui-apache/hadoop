@@ -28,19 +28,22 @@ import java.nio.ByteBuffer;
  * instead of codec, and is intended for test only.
  */
 @InterfaceAudience.Private
-public class DummyRawEncoder extends AbstractRawErasureEncoder {
-  public DummyRawEncoder(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
+public class DummyRawEncoder extends RawErasureEncoder {
+
+  public DummyRawEncoder(ErasureCoderOptions conf) {
+    super(conf);
   }
 
   @Override
-  protected void doEncode(ByteBuffer[] inputs, ByteBuffer[] outputs) {
+  protected void doEncode(EncodingState encodingState, ByteBuffer[] inputs,
+                          ByteBuffer[] outputs) {
     // Nothing to do. Output buffers have already been reset
   }
 
   @Override
-  protected void doEncode(byte[][] inputs, int[] inputOffsets, int dataLen,
-      byte[][] outputs, int[] outputOffsets) {
+  protected void doEncode(EncodingState encodingState, byte[][] inputs,
+                          int[] inputOffsets, byte[][] outputs,
+                          int[] outputOffsets) {
     // Nothing to do. Output buffers have already been reset
   }
 }

@@ -22,7 +22,7 @@ import org.apache.hadoop.io.erasurecode.CodecUtil;
 import org.apache.hadoop.io.erasurecode.ECBlock;
 import org.apache.hadoop.io.erasurecode.ECBlockGroup;
 import org.apache.hadoop.io.erasurecode.ECSchema;
-import org.apache.hadoop.io.erasurecode.rawcoder.CoderOption;
+import org.apache.hadoop.io.erasurecode.rawcoder.ErasureCoderOptions;
 import org.apache.hadoop.io.erasurecode.rawcoder.RawErasureEncoder;
 
 /**
@@ -72,9 +72,10 @@ public class HHXORErasureEncoder extends AbstractErasureEncoder {
 
   private RawErasureEncoder checkCreateXorRawEncoder() {
     if (xorRawEncoder == null) {
+      ErasureCoderOptions erasureCoderOptions = new ErasureCoderOptions(
+          getNumDataUnits(), getNumParityUnits(), false, false);
       xorRawEncoder = CodecUtil.createXORRawEncoder(getConf(),
-              getNumDataUnits(), getNumParityUnits());
-      xorRawEncoder.setCoderOption(CoderOption.ALLOW_CHANGE_INPUTS, false);
+          erasureCoderOptions);
     }
     return xorRawEncoder;
   }

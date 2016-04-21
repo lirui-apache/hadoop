@@ -29,20 +29,20 @@ import java.util.Arrays;
  * when possible.
  */
 @InterfaceAudience.Private
-public class RSRawEncoderLegacy extends AbstractRawErasureEncoder {
+public class RSRawEncoderLegacy extends RawErasureEncoder {
   private int[] generatingPolynomial;
 
-  public RSRawEncoderLegacy(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
+  public RSRawEncoderLegacy(ErasureCoderOptions conf) {
+    super(conf);
 
     assert (getNumDataUnits() + getNumParityUnits() < RSUtil.GF.getFieldSize());
 
-    int[] primitivePower = RSUtil.getPrimitivePower(numDataUnits,
-        numParityUnits);
+    int[] primitivePower = RSUtil.getPrimitivePower(getNumDataUnits(),
+        getNumParityUnits());
     // compute generating polynomial
     int[] gen = {1};
     int[] poly = new int[2];
-    for (int i = 0; i < numParityUnits; i++) {
+    for (int i = 0; i < getNumParityUnits(); i++) {
       poly[0] = primitivePower[i];
       poly[1] = 1;
       gen = RSUtil.GF.multiply(gen, poly);
@@ -52,11 +52,13 @@ public class RSRawEncoderLegacy extends AbstractRawErasureEncoder {
   }
 
   @Override
-  protected void doEncode(ByteBuffer[] inputs, ByteBuffer[] outputs) {
+  protected void doEncode(EncodingState encodingState, ByteBuffer[] inputs,
+                          ByteBuffer[] outputs) {
+    CoderUtil.resetOutputBuffers(outputs, encodingState.getEncodeLength());
     // parity units + data units
     ByteBuffer[] all = new ByteBuffer[outputs.length + inputs.length];
 
-    if (isAllowingChangeInputs()) {
+    if (allowChangeInputs()) {
       System.arraycopy(outputs, 0, all, 0, outputs.length);
       System.arraycopy(inputs, 0, all, outputs.length, inputs.length);
     } else {
@@ -81,14 +83,16 @@ public class RSRawEncoderLegacy extends AbstractRawErasureEncoder {
   }
 
   @Override
-  protected void doEncode(byte[][] inputs, int[] inputOffsets,
-                          int dataLen, byte[][] outputs,
+  protected void doEncode(EncodingState encodingState, byte[][] inputs,
+                          int[] inputOffsets, byte[][] outputs,
                           int[] outputOffsets) {
+    int dataLen = encodingState.getEncodeLength();
+    CoderUtil.resetOutputBuffers(outputs, outputOffsets, dataLen);
     // parity units + data units
     byte[][] all = new byte[outputs.length + inputs.length][];
     int[] allOffsets = new int[outputOffsets.length + inputOffsets.length];
 
-    if (isAllowingChangeInputs()) {
+    if (allowChangeInputs()) {
       System.arraycopy(outputs, 0, all, 0, outputs.length);
       System.arraycopy(inputs, 0, all, outputs.length, inputs.length);
 

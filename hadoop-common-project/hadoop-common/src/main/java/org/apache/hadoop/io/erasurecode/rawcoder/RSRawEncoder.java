@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
  * from HDFS-RAID, and also compatible with the native/ISA-L coder.
  */
 @InterfaceAudience.Private
-public class RSRawEncoder extends AbstractRawErasureEncoder {
+public class RSRawEncoder extends RawErasureEncoder {
   // relevant to schema and won't change during encode calls.
   private byte[] encodeMatrix;
   /**
@@ -40,36 +40,41 @@ public class RSRawEncoder extends AbstractRawErasureEncoder {
    */
   private byte[] gfTables;
 
-  public RSRawEncoder(int numDataUnits, int numParityUnits) {
-    super(numDataUnits, numParityUnits);
+  public RSRawEncoder(ErasureCoderOptions conf) {
+    super(conf);
 
-    if (numDataUnits + numParityUnits >= RSUtil.GF.getFieldSize()) {
+    if (getNumAllUnits() >= RSUtil.GF.getFieldSize()) {
       throw new HadoopIllegalArgumentException(
           "Invalid numDataUnits and numParityUnits");
     }
 
-    encodeMatrix = new byte[getNumAllUnits() * numDataUnits];
-    RSUtil.genCauchyMatrix(encodeMatrix, getNumAllUnits(), numDataUnits);
-    if (isAllowingVerboseDump()) {
-      DumpUtil.dumpMatrix(encodeMatrix, numDataUnits, getNumAllUnits());
+    encodeMatrix = new byte[getNumAllUnits() * getNumDataUnits()];
+    RSUtil.genCauchyMatrix(encodeMatrix, getNumAllUnits(), getNumDataUnits());
+    if (allowVerboseDump()) {
+      DumpUtil.dumpMatrix(encodeMatrix, getNumDataUnits(), getNumAllUnits());
     }
-    gfTables = new byte[getNumAllUnits() * numDataUnits * 32];
-    RSUtil.initTables(numDataUnits, numParityUnits, encodeMatrix,
-        numDataUnits * numDataUnits, gfTables);
-    if (isAllowingVerboseDump()) {
+    gfTables = new byte[getNumAllUnits() * getNumDataUnits() * 32];
+    RSUtil.initTables(getNumDataUnits(), getNumParityUnits(), encodeMatrix,
+        getNumDataUnits() * getNumDataUnits(), gfTables);
+    if (allowVerboseDump()) {
       System.out.println(DumpUtil.bytesToHex(gfTables, -1));
     }
   }
 
   @Override
-  protected void doEncode(ByteBuffer[] inputs, ByteBuffer[] outputs) {
+  protected void doEncode(EncodingState encodingState, ByteBuffer[] inputs,
+                          ByteBuffer[] outputs) {
+    CoderUtil.resetOutputBuffers(outputs, encodingState.getEncodeLength());
     RSUtil.encodeData(gfTables, inputs, outputs);
   }
 
   @Override
-  protected void doEncode(byte[][] inputs, int[] inputOffsets,
-                          int dataLen, byte[][] outputs, int[] outputOffsets) {
-    RSUtil.encodeData(gfTables, dataLen, inputs, inputOffsets, outputs,
-        outputOffsets);
+  protected void doEncode(EncodingState encodingState, byte[][] inputs,
+                          int[] inputOffsets, byte[][] outputs,
+                          int[] outputOffsets) {
+    CoderUtil.resetOutputBuffers(outputs, outputOffsets,
+        encodingState.getEncodeLength());
+    RSUtil.encodeData(gfTables, encodingState.getEncodeLength(), inputs,
+        inputOffsets, outputs, outputOffsets);
   }
 }
