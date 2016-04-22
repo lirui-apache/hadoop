@@ -264,7 +264,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testInputPosition(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders(false);
+    prepareCoders(true);
     prepareBufferAllocator(false);
 
     // verify encode
