@@ -62,7 +62,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCoding(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders(false);
+    prepareCoders(true);
 
     /**
      * The following runs will use 3 different chunkSize for inputs and outputs,
