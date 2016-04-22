@@ -79,7 +79,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCodingWithBadInput(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders(false);
+    prepareCoders(true);
 
     try {
       performTestCoding(baseChunkSize, false, true, false, true);
@@ -95,7 +95,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCodingWithBadOutput(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders(false);
+    prepareCoders(true);
 
     try {
       performTestCoding(baseChunkSize, false, false, true, true);
@@ -188,9 +188,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
   }
 
   protected void setAllowChangeInputs(boolean allowChangeInputs) {
-    boolean recreate = this.allowChangeInputs != allowChangeInputs;
     this.allowChangeInputs = allowChangeInputs;
-    prepareCoders(recreate);
   }
 
   /**
@@ -199,9 +197,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    * @param allowDump
    */
   protected void setAllowDump(boolean allowDump) {
-    boolean recreate = this.allowDump != allowDump;
     this.allowDump = allowDump;
-    prepareCoders(recreate);
   }
 
   protected void prepareCoders(boolean recreate) {
