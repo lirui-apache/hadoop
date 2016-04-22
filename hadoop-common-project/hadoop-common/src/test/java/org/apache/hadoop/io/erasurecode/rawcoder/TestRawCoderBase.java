@@ -62,7 +62,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCoding(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders();
+    prepareCoders(false);
 
     /**
      * The following runs will use 3 different chunkSize for inputs and outputs,
@@ -79,7 +79,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCodingWithBadInput(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders();
+    prepareCoders(false);
 
     try {
       performTestCoding(baseChunkSize, false, true, false, true);
@@ -95,7 +95,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testCodingWithBadOutput(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders();
+    prepareCoders(false);
 
     try {
       performTestCoding(baseChunkSize, false, false, true, true);
@@ -188,17 +188,28 @@ public abstract class TestRawCoderBase extends TestCoderBase {
   }
 
   protected void setAllowChangeInputs(boolean allowChangeInputs) {
+    boolean recreate = this.allowChangeInputs != allowChangeInputs;
     this.allowChangeInputs = allowChangeInputs;
-    encoder.setCoderOption(CoderOption.ALLOW_CHANGE_INPUTS, allowChangeInputs);
-    decoder.setCoderOption(CoderOption.ALLOW_CHANGE_INPUTS, allowChangeInputs);
+    prepareCoders(recreate);
   }
 
-  protected void prepareCoders() {
-    if (encoder == null) {
+  /**
+   * Set true during setup if want to dump test settings and coding data,
+   * useful in debugging.
+   * @param allowDump
+   */
+  protected void setAllowDump(boolean allowDump) {
+    boolean recreate = this.allowDump != allowDump;
+    this.allowDump = allowDump;
+    prepareCoders(recreate);
+  }
+
+  protected void prepareCoders(boolean recreate) {
+    if (encoder == null || recreate) {
       encoder = createEncoder();
     }
 
-    if (decoder == null) {
+    if (decoder == null || recreate) {
       decoder = createDecoder();
     }
   }
@@ -223,8 +234,8 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected RawErasureEncoder createEncoder() {
     ErasureCoderOptions coderConf =
-        new ErasureCoderOptions(numDataUnits, numParityUnits);
-    coderConf.setCoderOption(CoderOption.ALLOW_VERBOSE_DUMP, isAllowDump());
+        new ErasureCoderOptions(numDataUnits, numParityUnits,
+            allowChangeInputs, allowDump);
     try {
       Constructor<? extends RawErasureEncoder> constructor =
           encoderClass.getConstructor(ErasureCoderOptions.class);
@@ -240,8 +251,8 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected RawErasureDecoder createDecoder() {
     ErasureCoderOptions coderConf =
-        new ErasureCoderOptions(numDataUnits, numParityUnits);
-    coderConf.setCoderOption(CoderOption.ALLOW_VERBOSE_DUMP, isAllowDump());
+        new ErasureCoderOptions(numDataUnits, numParityUnits,
+            allowChangeInputs, allowDump);
     try {
       Constructor<? extends RawErasureDecoder> constructor =
           decoderClass.getConstructor(ErasureCoderOptions.class);
@@ -257,7 +268,7 @@ public abstract class TestRawCoderBase extends TestCoderBase {
    */
   protected void testInputPosition(boolean usingDirectBuffer) {
     this.usingDirectBuffer = usingDirectBuffer;
-    prepareCoders();
+    prepareCoders(false);
     prepareBufferAllocator(false);
 
     // verify encode
